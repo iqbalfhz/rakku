@@ -45,7 +45,7 @@ class AppPanelProvider extends PanelProvider
             ->tenantProfile(EditBookProfile::class)
             ->databaseNotifications()
             ->databaseTransactions()
-            ->sidebarFullyCollapsibleOnDesktop()
+            ->sidebarCollapsibleOnDesktop()
             ->renderHook(
                 PanelsRenderHook::SIDEBAR_NAV_END,
                 fn (): View => view('filament.app.sidebar-accordion'),
