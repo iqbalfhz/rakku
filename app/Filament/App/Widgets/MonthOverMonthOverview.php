@@ -5,7 +5,7 @@ namespace App\Filament\App\Widgets;
 use App\Enums\TransactionType;
 use App\Filament\App\Widgets\Concerns\InteractsWithLedgerReport;
 use App\Models\User;
-use App\Services\LedgerReport;
+use App\Support\Percentage;
 use App\Support\Rupiah;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
@@ -57,7 +57,7 @@ class MonthOverMonthOverview extends StatsOverviewWidget
 
     private function comparisonStat(string $label, float $current, float $previous, bool $increaseIsGood): Stat
     {
-        $changePercent = LedgerReport::changePercent($current, $previous);
+        $changePercent = Percentage::change($current, $previous);
         $isIncrease = $current >= $previous;
 
         return Stat::make($label, Rupiah::format($current))

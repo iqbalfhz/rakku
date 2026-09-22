@@ -6,6 +6,8 @@ use App\Enums\SubscriptionPlan;
 use App\Enums\SubscriptionStatus;
 use Database\Factories\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,5 +44,18 @@ class Subscription extends Model
         return $this->plan === SubscriptionPlan::Premium
             && $this->status === SubscriptionStatus::Active
             && ($this->expires_at === null || $this->expires_at->isFuture());
+    }
+
+    /**
+     * Versi query dari isActivePremium().
+     *
+     * @param  Builder<Subscription>  $query
+     */
+    #[Scope]
+    protected function activePremium(Builder $query): void
+    {
+        $query->where('plan', SubscriptionPlan::Premium)
+            ->where('status', SubscriptionStatus::Active)
+            ->where(fn (Builder $expiry) => $expiry->whereNull('expires_at')->orWhere('expires_at', '>', now()));
     }
 }

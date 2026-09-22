@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\TransactionType;
 use App\Models\Book;
 use App\Models\Transaction;
+use App\Support\Percentage;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Carbon\CarbonPeriod;
@@ -113,15 +114,10 @@ class LedgerReport
                 'category' => $category,
                 'current' => $current[$category] ?? 0.0,
                 'previous' => $previous[$category] ?? 0.0,
-                'change_percent' => self::changePercent($current[$category] ?? 0.0, $previous[$category] ?? 0.0),
+                'change_percent' => Percentage::change($current[$category] ?? 0.0, $previous[$category] ?? 0.0),
             ])
             ->sortByDesc('current')
             ->values();
-    }
-
-    public static function changePercent(float $current, float $previous): ?float
-    {
-        return $previous > 0 ? round(($current - $previous) / $previous * 100, 1) : null;
     }
 
     /**

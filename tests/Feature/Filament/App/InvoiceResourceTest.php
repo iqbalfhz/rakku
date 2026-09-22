@@ -1,10 +1,12 @@
 <?php
 
+use App\Actions\SendInvoiceByEmail;
 use App\Enums\InvoiceStatus;
 use App\Enums\TransactionType;
 use App\Filament\App\Resources\Invoices\Pages\CreateInvoice;
 use App\Filament\App\Resources\Invoices\Pages\EditInvoice;
 use App\Filament\App\Resources\Invoices\Pages\ListInvoices;
+use App\Mail\InvoiceMail;
 use App\Models\Account;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -12,7 +14,9 @@ use App\Models\InvoiceItem;
 use App\Models\User;
 use Filament\Actions\Testing\TestAction;
 use Filament\Forms\Components\Repeater;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
+use Symfony\Component\Mailer\Exception\TransportException;
 
 it('creates an invoice with its items and a generated number', function () {
     $this->travelTo('2026-09-01');
@@ -97,7 +101,8 @@ it('locks the form and hides saving once the invoice is paid', function () {
     Livewire::test(EditInvoice::class, ['record' => $invoice->getRouteKey()])
         ->assertFormFieldDisabled('client_id')
         ->assertActionDoesNotExist(TestAction::make('save')->schemaComponent('form-actions', schema: 'content'))
-        ->assertActionVisible('cancelPayment');
+        ->assertActionVisible('cancelPayment')
+        ->assertActionHidden('sendViaWhatsApp');
 });
 
 it('keeps the form editable while the invoice is unpaid', function () {
@@ -107,7 +112,102 @@ it('keeps the form editable while the invoice is unpaid', function () {
 
     Livewire::test(EditInvoice::class, ['record' => $invoice->getRouteKey()])
         ->assertFormFieldEnabled('client_id')
+        ->assertActionVisible('sendViaWhatsApp')
+        ->assertActionVisible('sendViaEmail')
         ->assertActionExists(TestAction::make('save')->schemaComponent('form-actions', schema: 'content'));
+});
+
+it('sends a draft invoice via WhatsApp to a new number and saves it to the client', function () {
+    $book = actingInBook(User::factory()->premium()->create());
+    $client = Client::factory()->for($book)->create(['phone' => '081100000000']);
+    $invoice = Invoice::factory()->for($book)->for($client)->create();
+    InvoiceItem::factory()->for($invoice)->create();
+
+    Livewire::test(ListInvoices::class)
+        ->callAction(TestAction::make('sendViaWhatsApp')->table($invoice), data: [
+            'phone' => '0812 3456 7890',
+            'save_to_client' => true,
+        ])
+        ->assertHasNoFormErrors()
+        ->assertNotified('WhatsApp dibuka di tab baru');
+
+    expect($client->fresh()->phone)->toBe('0812 3456 7890')
+        ->and($invoice->fresh()->status)->toBe(InvoiceStatus::Sent);
+});
+
+it('resends an overdue invoice via WhatsApp without changing its status or the saved number', function () {
+    $book = actingInBook(User::factory()->premium()->create());
+    $client = Client::factory()->for($book)->create(['phone' => '081100000000']);
+    $invoice = Invoice::factory()->for($book)->for($client)->overdue()->create();
+    InvoiceItem::factory()->for($invoice)->create();
+
+    Livewire::test(ListInvoices::class)
+        ->assertActionHasLabel(TestAction::make('sendViaWhatsApp')->table($invoice), 'Kirim ulang via WhatsApp')
+        ->callAction(TestAction::make('sendViaWhatsApp')->table($invoice), data: [
+            'phone' => '0899 9999 9999',
+            'save_to_client' => false,
+        ])
+        ->assertHasNoFormErrors();
+
+    expect($client->fresh()->phone)->toBe('081100000000')
+        ->and($invoice->fresh()->status)->toBe(InvoiceStatus::Overdue);
+});
+
+it('rejects an invalid WhatsApp number', function () {
+    $book = actingInBook(User::factory()->premium()->create());
+    $invoice = Invoice::factory()->for($book)->create();
+
+    Livewire::test(ListInvoices::class)
+        ->callAction(TestAction::make('sendViaWhatsApp')->table($invoice), data: ['phone' => 'bukan-nomor'])
+        ->assertHasFormErrors(['phone' => 'Nomor WhatsApp tidak valid.']);
+
+    expect($invoice->fresh()->status)->toBe(InvoiceStatus::Draft);
+});
+
+it('emails the invoice PDF to the client and marks the draft as sent', function () {
+    Mail::fake();
+    $book = actingInBook(User::factory()->premium()->create());
+    $client = Client::factory()->for($book)->create(['email' => 'lama@klien.test']);
+    $invoice = Invoice::factory()->for($book)->for($client)->create();
+    InvoiceItem::factory()->for($invoice)->create();
+
+    Livewire::test(ListInvoices::class)
+        ->callAction(TestAction::make('sendViaEmail')->table($invoice), data: [
+            'email' => 'baru@klien.test',
+            'save_to_client' => true,
+        ])
+        ->assertHasNoFormErrors()
+        ->assertNotified("Invoice {$invoice->invoice_number} terkirim ke baru@klien.test");
+
+    Mail::assertSent(InvoiceMail::class, fn (InvoiceMail $mail): bool => $mail->hasTo('baru@klien.test') && $mail->invoice->is($invoice));
+    expect($client->fresh()->email)->toBe('baru@klien.test')
+        ->and($invoice->fresh()->status)->toBe(InvoiceStatus::Sent);
+});
+
+it('keeps the invoice unchanged and reports the error when the email fails', function () {
+    $book = actingInBook(User::factory()->premium()->create());
+    $invoice = Invoice::factory()->for($book)->create();
+    $this->mock(SendInvoiceByEmail::class)
+        ->shouldReceive('handle')
+        ->andThrow(new TransportException('SMTP tidak tersedia'));
+
+    Livewire::test(ListInvoices::class)
+        ->callAction(TestAction::make('sendViaEmail')->table($invoice), data: [
+            'email' => 'klien@klien.test',
+            'save_to_client' => false,
+        ])
+        ->assertNotified('Email gagal dikirim');
+
+    expect($invoice->fresh()->status)->toBe(InvoiceStatus::Draft);
+});
+
+it('hides the send actions once the invoice is paid', function () {
+    $book = actingInBook(User::factory()->premium()->create());
+    $invoice = Invoice::factory()->for($book)->create(['status' => InvoiceStatus::Paid]);
+
+    Livewire::test(ListInvoices::class)
+        ->assertActionHidden(TestAction::make('sendViaWhatsApp')->table($invoice))
+        ->assertActionHidden(TestAction::make('sendViaEmail')->table($invoice));
 });
 
 it('downloads the invoice as a PDF', function () {

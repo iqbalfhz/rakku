@@ -7,6 +7,8 @@ use App\Filament\App\Resources\Invoices\Actions\CancelInvoicePaymentAction;
 use App\Filament\App\Resources\Invoices\Actions\DownloadInvoicePdfAction;
 use App\Filament\App\Resources\Invoices\Actions\MarkInvoiceAsPaidAction;
 use App\Filament\App\Resources\Invoices\Actions\MarkInvoiceAsSentAction;
+use App\Filament\App\Resources\Invoices\Actions\SendInvoiceViaEmailAction;
+use App\Filament\App\Resources\Invoices\Actions\SendInvoiceViaWhatsAppAction;
 use App\Models\Invoice;
 use App\Support\Rupiah;
 use Filament\Actions\ActionGroup;
@@ -56,6 +58,8 @@ class InvoicesTable
                 EditAction::make()
                     ->hidden(fn (Invoice $record): bool => $record->isPaid()),
                 ActionGroup::make([
+                    SendInvoiceViaWhatsAppAction::make(),
+                    SendInvoiceViaEmailAction::make(),
                     MarkInvoiceAsSentAction::make(),
                     MarkInvoiceAsPaidAction::make(),
                     CancelInvoicePaymentAction::make(),

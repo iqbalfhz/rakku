@@ -15,6 +15,8 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -81,6 +83,30 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
     public function isPremium(): bool
     {
         return $this->currentSubscription?->isActivePremium() ?? false;
+    }
+
+    /**
+     * Versi query dari isPremium().
+     *
+     * @param  Builder<User>  $query
+     */
+    #[Scope]
+    protected function premium(Builder $query): void
+    {
+        $query->whereHas('currentSubscription', fn (Builder $subscription) => $subscription->activePremium());
+    }
+
+    /**
+     * User premium yang masa aktifnya habis dalam N hari ke depan.
+     *
+     * @param  Builder<User>  $query
+     */
+    #[Scope]
+    protected function premiumExpiringWithin(Builder $query, int $days): void
+    {
+        $query->whereHas('currentSubscription', fn (Builder $subscription) => $subscription
+            ->activePremium()
+            ->where('expires_at', '<=', now()->addDays($days)));
     }
 
     public function canCreateBook(): bool

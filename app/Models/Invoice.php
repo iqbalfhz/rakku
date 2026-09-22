@@ -12,12 +12,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 
 #[Fillable(['client_id', 'invoice_number', 'issue_date', 'due_date', 'notes'])]
 class Invoice extends Model
 {
     /** @use HasFactory<InvoiceFactory> */
     use HasFactory;
+
+    public const int SHARED_PDF_LINK_DAYS = 30;
 
     /**
      * @var array<string, mixed>
@@ -95,6 +98,28 @@ class Invoice extends Model
     {
         $this->status = $this->due_date->lt(today()) ? InvoiceStatus::Overdue : InvoiceStatus::Sent;
         $this->save();
+    }
+
+    /**
+     * Pengiriman pertama mengubah draft menjadi terkirim; kirim ulang tidak mengubah status.
+     */
+    public function markAsSentIfDraft(): void
+    {
+        if ($this->status === InvoiceStatus::Draft) {
+            $this->markAsSent();
+        }
+    }
+
+    /**
+     * Link PDF bertanda tangan yang bisa dibuka klien tanpa login.
+     */
+    public function sharedPdfUrl(): string
+    {
+        return URL::temporarySignedRoute(
+            'invoices.shared-pdf',
+            now()->addDays(self::SHARED_PDF_LINK_DAYS),
+            ['invoice' => $this],
+        );
     }
 
     /**

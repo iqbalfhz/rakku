@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Users\Pages;
 
 use App\Filament\Admin\Resources\Users\Actions\ActivatePremiumAction;
 use App\Filament\Admin\Resources\Users\Actions\DowngradeToFreeAction;
+use App\Filament\Admin\Resources\Users\Actions\ToggleAdminAction;
 use App\Filament\Admin\Resources\Users\UserResource;
 use Filament\Resources\Pages\EditRecord;
 
@@ -16,6 +17,7 @@ class EditUser extends EditRecord
         return [
             ActivatePremiumAction::make()->after(fn () => $this->refreshSubscription()),
             DowngradeToFreeAction::make()->after(fn () => $this->refreshSubscription()),
+            ToggleAdminAction::make(),
         ];
     }
 

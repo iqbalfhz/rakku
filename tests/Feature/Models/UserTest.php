@@ -19,6 +19,28 @@ it('treats a user as premium only while the latest subscription is an active pre
     'active free plan' => [['plan' => SubscriptionPlan::Free], false],
 ]);
 
+it('finds the same premium users in queries as isPremium', function () {
+    $premium = User::factory()->premium()->create();
+    $downgraded = User::factory()->premium()->create();
+    $downgraded->subscribeTo(SubscriptionPlan::Free);
+    $expired = User::factory()->create();
+    $expired->subscribeTo(SubscriptionPlan::Premium, now()->subDay());
+    User::factory()->create();
+
+    expect(User::query()->premium()->pluck('id')->all())->toBe([$premium->id]);
+});
+
+it('finds premium users whose plan ends within the given number of days', function () {
+    $this->freezeTime();
+    $endingSoon = User::factory()->create();
+    $endingSoon->subscribeTo(SubscriptionPlan::Premium, now()->addDays(5));
+    $endingLater = User::factory()->create();
+    $endingLater->subscribeTo(SubscriptionPlan::Premium, now()->addDays(30));
+    User::factory()->premium()->create();
+
+    expect(User::query()->premiumExpiringWithin(14)->pluck('id')->all())->toBe([$endingSoon->id]);
+});
+
 it('cancels the previous active subscription when switching plans', function () {
     $user = User::factory()->create();
     $freeSubscription = $user->currentSubscription;
