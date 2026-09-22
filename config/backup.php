@@ -18,11 +18,12 @@ return [
     | Folder yang Dilewati
     |--------------------------------------------------------------------------
     |
-    | Sisa unggahan yang belum tersimpan tidak perlu ikut diarsipkan.
+    | Sisa unggahan yang belum tersimpan dan hasil export tidak perlu ikut
+    | diarsipkan: keduanya bisa dibuat ulang dari database kapan saja.
     |
     */
 
-    'excluded_directories' => ['livewire-tmp'],
+    'excluded_directories' => ['livewire-tmp', 'filament_exports'],
 
     /*
     |--------------------------------------------------------------------------

@@ -39,16 +39,19 @@ it('archives every uploaded file, keeping its folder structure', function () {
     $zip->close();
 });
 
-it('leaves unfinished uploads out of the archive', function () {
-    File::ensureDirectoryExists($this->source.'/livewire-tmp');
-    File::put($this->source.'/livewire-tmp/setengah-jadi.png', 'unggahan batal');
+it('leaves regenerable files out of the archive', function (string $directory) {
+    File::ensureDirectoryExists($this->source.'/'.$directory);
+    File::put($this->source.'/'.$directory.'/bisa-dibuat-ulang.tmp', 'isi apa saja');
 
     $this->artisan('app:backup-files')
         ->expectsOutputToContain('Belum ada file unggahan')
         ->assertSuccessful();
 
     expect(File::glob($this->destination.'/*.zip'))->toBeEmpty();
-});
+})->with([
+    'unggahan yang batal' => 'livewire-tmp',
+    'hasil export' => 'filament_exports',
+]);
 
 it('skips the archive when nothing has been uploaded yet', function () {
     $this->artisan('app:backup-files')

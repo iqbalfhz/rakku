@@ -14,6 +14,7 @@ it('schedules the daily jobs and processes the queue every minute', function () 
         'app:mark-overdue-invoices' => '10 0 * * *',
         'app:send-debt-reminders' => '0 8 * * *',
         'app:backup-files' => '30 2 * * *',
+        'app:prune-exports' => '0 3 * * *',
         'app:report-failed-jobs' => '0 7 * * *',
         'queue:work --stop-when-empty --max-time=55 --tries=3 --backoff=60' => '* * * * *',
     ]);

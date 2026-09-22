@@ -3,6 +3,7 @@
 use App\Console\Commands\BackupFiles;
 use App\Console\Commands\GenerateRecurringTransactions;
 use App\Console\Commands\MarkOverdueInvoices;
+use App\Console\Commands\PruneExports;
 use App\Console\Commands\ReportFailedJobs;
 use App\Console\Commands\SendDebtReminders;
 use Illuminate\Foundation\Inspiring;
@@ -19,6 +20,7 @@ Schedule::command(SendDebtReminders::class)->dailyAt('08:00');
 
 // Backup database diurus Coolify; ini menyalin file unggahan yang tidak ikut di dalamnya.
 Schedule::command(BackupFiles::class)->dailyAt('02:30')->withoutOverlapping();
+Schedule::command(PruneExports::class)->dailyAt('03:00');
 Schedule::command(ReportFailedJobs::class)->dailyAt('07:00');
 
 // Pengganti queue worker permanen: email verifikasi/reset kata sandi dan export diproses tiap menit lewat schedule:run.
