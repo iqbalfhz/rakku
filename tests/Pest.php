@@ -1,6 +1,9 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\Book;
+use App\Models\User;
+use Filament\Facades\Filament;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 /*
@@ -15,7 +18,7 @@ use Tests\TestCase;
 */
 
 pest()->extend(TestCase::class)
- // ->use(RefreshDatabase::class)
+    ->use(LazilyRefreshDatabase::class)
     ->in('Feature');
 
 /*
@@ -44,7 +47,18 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Login sebagai user dan buka panel aplikasi pada buku tertentu (default: buku pertamanya).
+ */
+function actingInBook(User $user, ?Book $book = null): Book
 {
-    // ..
+    $book ??= $user->books()->oldest('id')->firstOrFail();
+
+    test()->actingAs($user);
+
+    Filament::setCurrentPanel('app');
+    Filament::setTenant($book);
+    Filament::bootCurrentPanel();
+
+    return $book;
 }

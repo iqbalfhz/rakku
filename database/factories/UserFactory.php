@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SubscriptionPlan;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -41,5 +42,17 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+        ]);
+    }
+
+    public function premium(): static
+    {
+        return $this->afterCreating(fn (User $user) => $user->subscribeTo(SubscriptionPlan::Premium));
     }
 }
