@@ -30,6 +30,6 @@ it('renders the one-group-at-a-time sidebar script', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user)
-        ->get("/app/{$user->books()->first()->id}")
+        ->get("/app/{$user->books()->first()->public_id}")
         ->assertSee('makeSidebarAccordion', escape: false);
 });

@@ -62,7 +62,7 @@ it('verifies a user email manually so they can open their book', function () {
 
     Filament::setCurrentPanel('app');
     $this->actingAs($member->fresh())
-        ->get("/app/{$member->books()->first()->id}")
+        ->get("/app/{$member->books()->first()->public_id}")
         ->assertSuccessful();
 });
 

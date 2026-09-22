@@ -41,7 +41,7 @@ class AppPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Emerald,
             ])
-            ->tenant(Book::class)
+            ->tenant(Book::class, slugAttribute: 'public_id')
             ->tenantRegistration(RegisterBook::class)
             ->tenantProfile(EditBookProfile::class)
             ->databaseNotifications()

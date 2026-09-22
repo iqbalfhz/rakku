@@ -7,6 +7,7 @@ use App\Observers\BookObserver;
 use Database\Factories\BookFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Book extends Model
 {
     /** @use HasFactory<BookFactory> */
-    use HasFactory;
+    use HasFactory, HasUlids;
 
     public const string DEFAULT_NAME = 'Pribadi';
 
@@ -39,6 +40,16 @@ class Book extends Model
         return [
             'is_default' => 'boolean',
         ];
+    }
+
+    /**
+     * Primary key tetap angka; hanya public_id (dipakai di URL) yang diisi ULID otomatis.
+     *
+     * @return list<string>
+     */
+    public function uniqueIds(): array
+    {
+        return ['public_id'];
     }
 
     /**

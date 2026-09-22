@@ -32,6 +32,6 @@ it('sends unverified users to the email verification notice', function () {
     $user = User::factory()->unverified()->create();
 
     $this->actingAs($user)
-        ->get("/app/{$user->books()->first()->id}")
+        ->get("/app/{$user->books()->first()->public_id}")
         ->assertRedirect('/app/email-verification/prompt');
 });

@@ -26,7 +26,7 @@ it('deletes an additional book with its receipts and returns to the default book
 
     Livewire::test(EditBookProfile::class)
         ->callAction('delete')
-        ->assertRedirect("/app/{$defaultBook->id}");
+        ->assertRedirect("/app/{$defaultBook->public_id}");
 
     $this->assertModelMissing($extraBook);
     Storage::disk(Transaction::receiptDisk())->assertMissing($receiptPath);
