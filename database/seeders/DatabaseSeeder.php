@@ -21,6 +21,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->isProduction()) {
+            $this->command?->warn('Seeder demo tidak dijalankan di production. Buat admin dengan: php artisan app:make-admin {email}');
+
+            return;
+        }
+
         $admin = User::factory()->admin()->premium()->create([
             'name' => 'Admin RakKu',
             'email' => 'admin@example.com',

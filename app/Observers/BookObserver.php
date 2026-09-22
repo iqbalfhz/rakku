@@ -20,6 +20,6 @@ class BookObserver
     {
         $receiptPaths = $book->transactions()->whereNotNull('receipt_photo_path')->pluck('receipt_photo_path');
 
-        Storage::disk(Transaction::RECEIPT_DISK)->delete($receiptPaths->all());
+        Storage::disk(Transaction::receiptDisk())->delete($receiptPaths->all());
     }
 }

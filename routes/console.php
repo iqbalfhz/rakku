@@ -14,3 +14,7 @@ Artisan::command('inspire', function () {
 Schedule::command(GenerateRecurringTransactions::class)->dailyAt('00:05')->withoutOverlapping();
 Schedule::command(MarkOverdueInvoices::class)->dailyAt('00:10');
 Schedule::command(SendDebtReminders::class)->dailyAt('08:00');
+
+// Pengganti queue worker permanen: email verifikasi/reset kata sandi dan export diproses tiap menit lewat schedule:run.
+// Job yang gagal (mis. SMTP gangguan sesaat) dicoba ulang sampai 3 kali dengan jeda 1 menit.
+Schedule::command('queue:work --stop-when-empty --max-time=55 --tries=3 --backoff=60')->everyMinute()->withoutOverlapping(2);

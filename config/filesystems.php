@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Receipt Photo Disk
+    |--------------------------------------------------------------------------
+    |
+    | Disk privat untuk foto struk transaksi. Gunakan disk cloud (mis. "s3")
+    | jika server tidak menyimpan file secara permanen di antara deploy.
+    |
+    */
+
+    'receipts' => env('RECEIPTS_DISK', 'local'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |

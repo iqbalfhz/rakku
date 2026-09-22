@@ -12,7 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        /*
+         * Di Coolify, request datang lewat Cloudflare Tunnel sebagai HTTP biasa. Tanpa ini Laravel mengira
+         * aksesnya bukan HTTPS: URL dibangun dengan http:// dan link bertanda tangan (PDF, verifikasi email)
+         * ditolak. "*" aman selama port aplikasi hanya terikat ke 127.0.0.1.
+         */
+        $middleware->trustProxies(at: env('TRUSTED_PROXIES', '*'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

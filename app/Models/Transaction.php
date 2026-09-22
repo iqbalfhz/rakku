@@ -31,9 +31,12 @@ class Transaction extends Model
     /** @use HasFactory<TransactionFactory> */
     use HasFactory;
 
-    public const string RECEIPT_DISK = 'local';
-
     public const string RECEIPT_DIRECTORY = 'receipts';
+
+    public static function receiptDisk(): string
+    {
+        return config('filesystems.receipts');
+    }
 
     /**
      * @return array<string, string>

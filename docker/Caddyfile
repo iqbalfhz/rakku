@@ -1,0 +1,17 @@
+{
+	# Admin API Caddy tidak dipakai; ditutup agar permukaan di jaringan container lebih kecil.
+	admin off
+
+	frankenphp
+
+	order php_server before file_server
+}
+
+# SERVER_NAME=":80" (dari Dockerfile) membuat Caddy melayani HTTP biasa tanpa menerbitkan sertifikat sendiri.
+{$SERVER_NAME:":80"} {
+	root /app/public
+	encode zstd br gzip
+
+	# Dibiarkan polos: php_server sudah menangani front controller Laravel dan tidak menerima try_files.
+	php_server
+}

@@ -16,11 +16,11 @@ it('does not allow deleting the default book', function () {
 });
 
 it('deletes an additional book with its receipts and returns to the default book', function () {
-    Storage::fake(Transaction::RECEIPT_DISK);
+    Storage::fake(Transaction::receiptDisk());
     $user = User::factory()->premium()->create();
     $defaultBook = $user->books()->sole();
     $extraBook = Book::factory()->for($user)->create();
-    $receiptPath = UploadedFile::fake()->image('struk.jpg')->store(Transaction::RECEIPT_DIRECTORY, Transaction::RECEIPT_DISK);
+    $receiptPath = UploadedFile::fake()->image('struk.jpg')->store(Transaction::RECEIPT_DIRECTORY, Transaction::receiptDisk());
     Transaction::factory()->for($extraBook)->create(['receipt_photo_path' => $receiptPath]);
     actingInBook($user, $extraBook);
 
@@ -29,5 +29,5 @@ it('deletes an additional book with its receipts and returns to the default book
         ->assertRedirect("/app/{$defaultBook->id}");
 
     $this->assertModelMissing($extraBook);
-    Storage::disk(Transaction::RECEIPT_DISK)->assertMissing($receiptPath);
+    Storage::disk(Transaction::receiptDisk())->assertMissing($receiptPath);
 });

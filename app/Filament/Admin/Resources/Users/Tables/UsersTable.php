@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Users\Tables;
 use App\Filament\Admin\Resources\Users\Actions\ActivatePremiumAction;
 use App\Filament\Admin\Resources\Users\Actions\DowngradeToFreeAction;
 use App\Filament\Admin\Resources\Users\Actions\ToggleAdminAction;
+use App\Filament\Admin\Resources\Users\Actions\VerifyEmailManuallyAction;
 use App\Models\User;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
@@ -39,6 +40,9 @@ class UsersTable
                     ->placeholder('-'),
                 TextColumn::make('books_count')
                     ->label('Buku'),
+                IconColumn::make('email_verified_at')
+                    ->label('Email terverifikasi')
+                    ->boolean(),
                 IconColumn::make('is_admin')
                     ->label('Admin')
                     ->boolean(),
@@ -57,6 +61,12 @@ class UsersTable
                         true: fn (Builder $query) => $query->premium(),
                         false: fn (Builder $query) => $query->whereNot(fn (Builder $users) => $users->premium()),
                     ),
+                TernaryFilter::make('email_verified_at')
+                    ->label('Email')
+                    ->placeholder('Semua pengguna')
+                    ->trueLabel('Terverifikasi')
+                    ->falseLabel('Belum terverifikasi')
+                    ->nullable(),
                 TernaryFilter::make('is_admin')
                     ->label('Admin')
                     ->placeholder('Semua pengguna')
@@ -68,6 +78,7 @@ class UsersTable
                 ActionGroup::make([
                     ActivatePremiumAction::make(),
                     DowngradeToFreeAction::make(),
+                    VerifyEmailManuallyAction::make(),
                     ToggleAdminAction::make(),
                 ]),
             ]);

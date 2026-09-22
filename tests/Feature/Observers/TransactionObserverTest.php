@@ -40,23 +40,23 @@ it('restores the account balance when a transaction is deleted', function () {
 });
 
 it('deletes the receipt photo together with the transaction', function () {
-    Storage::fake(Transaction::RECEIPT_DISK);
-    $path = UploadedFile::fake()->image('struk.jpg')->store(Transaction::RECEIPT_DIRECTORY, Transaction::RECEIPT_DISK);
+    Storage::fake(Transaction::receiptDisk());
+    $path = UploadedFile::fake()->image('struk.jpg')->store(Transaction::RECEIPT_DIRECTORY, Transaction::receiptDisk());
     $transaction = Transaction::factory()->create(['receipt_photo_path' => $path]);
 
     $transaction->delete();
 
-    Storage::disk(Transaction::RECEIPT_DISK)->assertMissing($path);
+    Storage::disk(Transaction::receiptDisk())->assertMissing($path);
 });
 
 it('deletes the old receipt photo when it is replaced', function () {
-    Storage::fake(Transaction::RECEIPT_DISK);
-    $oldPath = UploadedFile::fake()->image('lama.jpg')->store(Transaction::RECEIPT_DIRECTORY, Transaction::RECEIPT_DISK);
-    $newPath = UploadedFile::fake()->image('baru.jpg')->store(Transaction::RECEIPT_DIRECTORY, Transaction::RECEIPT_DISK);
+    Storage::fake(Transaction::receiptDisk());
+    $oldPath = UploadedFile::fake()->image('lama.jpg')->store(Transaction::RECEIPT_DIRECTORY, Transaction::receiptDisk());
+    $newPath = UploadedFile::fake()->image('baru.jpg')->store(Transaction::RECEIPT_DIRECTORY, Transaction::receiptDisk());
     $transaction = Transaction::factory()->create(['receipt_photo_path' => $oldPath]);
 
     $transaction->update(['receipt_photo_path' => $newPath]);
 
-    Storage::disk(Transaction::RECEIPT_DISK)->assertMissing($oldPath);
-    Storage::disk(Transaction::RECEIPT_DISK)->assertExists($newPath);
+    Storage::disk(Transaction::receiptDisk())->assertMissing($oldPath);
+    Storage::disk(Transaction::receiptDisk())->assertExists($newPath);
 });

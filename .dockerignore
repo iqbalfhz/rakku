@@ -1,0 +1,33 @@
+# Dibangun ulang di dalam image
+/node_modules
+/vendor
+/public/build
+/public/css/filament
+/public/js/filament
+/public/fonts/filament
+/bootstrap/cache/*.php
+
+# Rahasia dan data lokal, jangan pernah ikut ke image
+.env
+.env.*
+!.env.example
+/database/*.sqlite
+/storage/app/private/*
+/storage/app/public/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/storage/*.key
+
+# Tidak diperlukan saat runtime
+/.git
+/.github
+/.claude
+/tests
+/docks
+phpunit.xml
+.editorconfig
+README.md
+CLAUDE.md
+AGENTS.md

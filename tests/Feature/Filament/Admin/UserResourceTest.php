@@ -50,6 +50,41 @@ it('does not let admins revoke their own admin access', function () {
         ->assertActionHidden(TestAction::make('toggleAdmin')->table($admin));
 });
 
+it('verifies a user email manually so they can open their book', function () {
+    $this->actingAs(User::factory()->admin()->create());
+    $member = User::factory()->unverified()->create();
+
+    Livewire::test(ListUsers::class)
+        ->callAction(TestAction::make('verifyEmailManually')->table($member))
+        ->assertNotified("Email {$member->email} terverifikasi");
+
+    expect($member->fresh()->hasVerifiedEmail())->toBeTrue();
+
+    Filament::setCurrentPanel('app');
+    $this->actingAs($member->fresh())
+        ->get("/app/{$member->books()->first()->id}")
+        ->assertSuccessful();
+});
+
+it('only offers manual verification for unverified users', function () {
+    $this->actingAs(User::factory()->admin()->create());
+    $verifiedMember = User::factory()->create();
+
+    Livewire::test(ListUsers::class)
+        ->assertActionHidden(TestAction::make('verifyEmailManually')->table($verifiedMember));
+});
+
+it('filters users whose email is not verified yet', function () {
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin);
+    $unverifiedMember = User::factory()->unverified()->create();
+
+    Livewire::test(ListUsers::class)
+        ->filterTable('email_verified_at', false)
+        ->assertCanSeeTableRecords([$unverifiedMember])
+        ->assertCanNotSeeTableRecords([$admin]);
+});
+
 it('filters users by plan', function () {
     $admin = User::factory()->admin()->create();
     $this->actingAs($admin);

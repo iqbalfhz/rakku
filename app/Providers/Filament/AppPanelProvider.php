@@ -35,6 +35,7 @@ class AppPanelProvider extends PanelProvider
             ->brandName('RakKu')
             ->login()
             ->registration()
+            ->emailVerification()
             ->passwordReset()
             ->profile()
             ->colors([

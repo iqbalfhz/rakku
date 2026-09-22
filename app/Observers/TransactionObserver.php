@@ -45,7 +45,7 @@ class TransactionObserver
     private function deleteReceipt(?string $path): void
     {
         if ($path !== null) {
-            Storage::disk(Transaction::RECEIPT_DISK)->delete($path);
+            Storage::disk(Transaction::receiptDisk())->delete($path);
         }
     }
 }

@@ -91,7 +91,7 @@ class TransactionResource extends Resource
                 FileUpload::make('receipt_photo_path')
                     ->label('Foto struk (opsional)')
                     ->image()
-                    ->disk(Transaction::RECEIPT_DISK)
+                    ->disk(Transaction::receiptDisk())
                     ->directory(Transaction::RECEIPT_DIRECTORY)
                     ->visibility('private')
                     ->maxSize(5120)
@@ -133,7 +133,7 @@ class TransactionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 ImageColumn::make('receipt_photo_path')
                     ->label('Struk')
-                    ->disk(Transaction::RECEIPT_DISK)
+                    ->disk(Transaction::receiptDisk())
                     ->visibility('private')
                     ->square(),
             ])

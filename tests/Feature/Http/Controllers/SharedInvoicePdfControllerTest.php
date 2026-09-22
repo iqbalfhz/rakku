@@ -2,6 +2,7 @@
 
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use Illuminate\Support\Facades\URL;
 
 it('serves the invoice PDF through a valid signed link without login', function () {
     $invoice = Invoice::factory()->sent()->create(['invoice_number' => 'INV-2026-0009']);
@@ -11,6 +12,16 @@ it('serves the invoice PDF through a valid signed link without login', function 
         ->assertOk()
         ->assertHeader('Content-Type', 'application/pdf')
         ->assertHeader('Content-Disposition', 'inline; filename="INV-2026-0009.pdf"');
+});
+
+it('keeps HTTPS PDF links valid behind the reverse proxy', function () {
+    $invoice = Invoice::factory()->sent()->create();
+    InvoiceItem::factory()->for($invoice)->create();
+    URL::forceScheme('https');
+    $url = $invoice->sharedPdfUrl();
+
+    $this->get(str_replace('https://', 'http://', $url), ['X-Forwarded-Proto' => 'https'])
+        ->assertOk();
 });
 
 it('rejects the PDF link when the signature is missing or tampered', function () {
