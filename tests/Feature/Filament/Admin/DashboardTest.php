@@ -51,12 +51,11 @@ it('extends an expiring premium from the dashboard', function () {
     $member->subscribeTo(SubscriptionPlan::Premium, now()->addDays(2));
 
     Livewire::test(ExpiringPremiumTable::class)
-        ->callAction(TestAction::make('activatePremium')->table($member), data: [
-            'expires_at' => now()->addYear()->toDateString(),
-        ])
+        ->callAction(TestAction::make('activatePremium')->table($member), data: ['duration' => 'yearly'])
         ->assertHasNoFormErrors();
 
-    expect($member->fresh()->currentSubscription->expires_at->toDateString())->toBe(now()->addYear()->toDateString());
+    expect($member->fresh()->currentSubscription->expires_at->toDateString())
+        ->toBe(now()->addDays(2)->addYear()->toDateString());
 });
 
 it('labels the dashboard as Dashboard instead of Dasbor', function () {

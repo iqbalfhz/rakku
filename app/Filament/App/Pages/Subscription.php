@@ -5,13 +5,16 @@ namespace App\Filament\App\Pages;
 use App\Enums\SubscriptionPackage;
 use App\Models\SubscriptionPayment;
 use App\Models\User;
+use App\Support\Rupiah;
 use App\Support\SubscriptionConfig;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Textarea;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
@@ -40,6 +43,68 @@ class Subscription extends Page
     public function mount(): void
     {
         $this->form->fill();
+    }
+
+    /**
+     * Status langganan dan tujuan transfer, disusun dengan komponen Filament agar rapi di semua lebar layar.
+     */
+    public function overview(Schema $schema): Schema
+    {
+        $bank = SubscriptionConfig::bank();
+
+        return $schema->components([
+            Section::make('Status langganan')
+                ->schema([
+                    TextEntry::make('plan')
+                        ->hiddenLabel()
+                        ->state($this->user()->isPremium() ? 'Premium' : 'Free')
+                        ->badge()
+                        ->color($this->user()->isPremium() ? 'warning' : 'gray'),
+                    TextEntry::make('expiry')
+                        ->label('Masa aktif')
+                        ->state(fn (): string => match (true) {
+                            ! $this->user()->isPremium() => 'Utang-piutang, invoice, laporan laba-rugi, transaksi berulang, dan buku tambahan terbuka setelah premium aktif.',
+                            $this->premiumExpiresAt() === null => 'Berlaku tanpa batas waktu.',
+                            default => "Berlaku sampai {$this->premiumExpiresAt()}.",
+                        }),
+                ]),
+            Section::make('Cara berlangganan')
+                ->description('Transfer sesuai paket yang Anda pilih di bawah, lalu unggah bukti transfernya. Admin memverifikasi secara manual.')
+                ->columns(3)
+                ->schema([
+                    TextEntry::make('bank_name')
+                        ->label('Bank')
+                        ->state($bank['name']),
+                    TextEntry::make('bank_account_number')
+                        ->label('Nomor rekening')
+                        ->state($bank['account_number'])
+                        ->copyable()
+                        ->copyMessage('Nomor rekening disalin'),
+                    TextEntry::make('bank_account_holder')
+                        ->label('Atas nama')
+                        ->state($bank['account_holder']),
+                ]),
+        ]);
+    }
+
+    /**
+     * Riwayat pengajuan sebelumnya, termasuk alasan kalau pernah ditolak.
+     */
+    public function history(Schema $schema): Schema
+    {
+        return $schema->components([
+            Section::make('Riwayat pengajuan')
+                ->collapsible()
+                ->collapsed()
+                ->visible(fn (): bool => $this->paymentHistory()->isNotEmpty())
+                ->schema($this->paymentHistory()
+                    ->map(fn (SubscriptionPayment $payment): TextEntry => TextEntry::make("payment-{$payment->id}")
+                        ->label($payment->created_at->translatedFormat('j F Y'))
+                        ->state($this->historyLine($payment))
+                        ->badge()
+                        ->color($payment->status->getColor()))
+                    ->all()),
+        ]);
     }
 
     public function form(Schema $schema): Schema
@@ -108,6 +173,18 @@ class Subscription extends Page
     public function paymentHistory(): Collection
     {
         return $this->user()->subscriptionPayments()->latest()->limit(10)->get();
+    }
+
+    private function historyLine(SubscriptionPayment $payment): string
+    {
+        $summary = sprintf(
+            '%d bulan · %s · %s',
+            $payment->package->months(),
+            Rupiah::format((float) $payment->amount),
+            $payment->status->getLabel(),
+        );
+
+        return $payment->rejection_reason === null ? $summary : "{$summary} — {$payment->rejection_reason}";
     }
 
     public function premiumExpiresAt(): ?string
