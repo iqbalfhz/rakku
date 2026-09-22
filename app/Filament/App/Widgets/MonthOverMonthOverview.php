@@ -6,6 +6,7 @@ use App\Enums\TransactionType;
 use App\Filament\App\Widgets\Concerns\InteractsWithLedgerReport;
 use App\Models\User;
 use App\Services\LedgerReport;
+use App\Support\Rupiah;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -48,7 +49,7 @@ class MonthOverMonthOverview extends StatsOverviewWidget
             Stat::make('Kenaikan tertinggi', $risingCategory['category'] ?? '-')
                 ->description($risingCategory === null
                     ? 'Tidak ada kategori yang naik'
-                    : "+{$risingCategory['change_percent']}% ({$this->formatRupiah($risingCategory['current'])})")
+                    : sprintf('+%s%% (%s)', $risingCategory['change_percent'], Rupiah::format($risingCategory['current'])))
                 ->descriptionIcon(Heroicon::ArrowTrendingUp)
                 ->color($risingCategory === null ? 'gray' : 'warning'),
         ];
@@ -59,10 +60,10 @@ class MonthOverMonthOverview extends StatsOverviewWidget
         $changePercent = LedgerReport::changePercent($current, $previous);
         $isIncrease = $current >= $previous;
 
-        return Stat::make($label, $this->formatRupiah($current))
+        return Stat::make($label, Rupiah::format($current))
             ->description($changePercent === null
-                ? 'Bulan lalu '.$this->formatRupiah($previous)
-                : sprintf('%s%s%% dari %s', $isIncrease ? '+' : '', $changePercent, $this->formatRupiah($previous)))
+                ? 'Bulan lalu '.Rupiah::format($previous)
+                : sprintf('%s%s%% dari %s', $isIncrease ? '+' : '', $changePercent, Rupiah::format($previous)))
             ->descriptionIcon($isIncrease ? Heroicon::ArrowTrendingUp : Heroicon::ArrowTrendingDown)
             ->color($isIncrease === $increaseIsGood ? 'success' : 'danger');
     }

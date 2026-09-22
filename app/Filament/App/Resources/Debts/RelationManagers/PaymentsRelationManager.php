@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources\Debts\RelationManagers;
 use App\Enums\DebtStatus;
 use App\Filament\Forms\Components\MoneyInput;
 use App\Models\Debt;
+use App\Support\Rupiah;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\DatePicker;
@@ -14,7 +15,6 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Number;
 
 class PaymentsRelationManager extends RelationManager
 {
@@ -36,7 +36,7 @@ class PaymentsRelationManager extends RelationManager
                     ->required(),
                 MoneyInput::make('amount')
                     ->label('Nominal')
-                    ->minValue(0.01)
+                    ->minValue(1)
                     ->maxValue(fn (): float => (float) $this->currentDebt()->remaining_amount)
                     ->default(fn (): float => (float) $this->currentDebt()->remaining_amount)
                     ->required(),
@@ -53,7 +53,7 @@ class PaymentsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->description(fn (): string => 'Sisa: '.Number::currency((float) $this->currentDebt()->remaining_amount, 'IDR'))
+            ->description(fn (): string => 'Sisa: '.Rupiah::format((float) $this->currentDebt()->remaining_amount))
             ->defaultSort('payment_date', 'desc')
             ->columns([
                 TextColumn::make('payment_date')
@@ -63,7 +63,7 @@ class PaymentsRelationManager extends RelationManager
                     ->label('Akun'),
                 TextColumn::make('amount')
                     ->label('Nominal')
-                    ->money('IDR'),
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES),
                 TextColumn::make('notes')
                     ->label('Catatan')
                     ->placeholder('-')

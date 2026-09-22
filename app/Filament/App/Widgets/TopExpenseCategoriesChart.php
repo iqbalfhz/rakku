@@ -4,6 +4,7 @@ namespace App\Filament\App\Widgets;
 
 use App\Enums\TransactionType;
 use App\Filament\App\Widgets\Concerns\InteractsWithLedgerReport;
+use App\Support\Rupiah;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Collection;
 
@@ -46,7 +47,7 @@ class TopExpenseCategoriesChart extends ChartWidget
             '%s menyerap %s%% pengeluaran (%s).',
             $largest['category'],
             round($largest['total'] / $grandTotal * 100),
-            $this->formatRupiah($largest['total']),
+            Rupiah::format($largest['total']),
         );
     }
 

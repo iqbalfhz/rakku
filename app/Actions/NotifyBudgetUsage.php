@@ -5,8 +5,8 @@ namespace App\Actions;
 use App\Enums\TransactionType;
 use App\Models\Budget;
 use App\Models\Transaction;
+use App\Support\Rupiah;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Number;
 
 class NotifyBudgetUsage
 {
@@ -44,8 +44,8 @@ class NotifyBudgetUsage
         $threshold = $limit * ($budget->alert_threshold_percent ?? 100) / 100;
         $summary = sprintf(
             'Terpakai %s dari limit %s (%s%%) di buku %s.',
-            Number::currency($spentAfter, 'IDR'),
-            Number::currency($limit, 'IDR'),
+            Rupiah::format($spentAfter),
+            Rupiah::format($limit),
             $budget->usagePercent($spentAfter),
             $budget->book->name,
         );

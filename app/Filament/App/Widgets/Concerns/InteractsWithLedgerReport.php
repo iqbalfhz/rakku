@@ -6,8 +6,10 @@ use App\Models\Book;
 use App\Services\LedgerReport;
 use App\Services\ReportPeriod;
 use Filament\Facades\Filament;
-use Illuminate\Support\Number;
 
+/**
+ * @property array<string, mixed>|null $pageFilters
+ */
 trait InteractsWithLedgerReport
 {
     protected function ledgerReport(): LedgerReport
@@ -24,10 +26,5 @@ trait InteractsWithLedgerReport
     protected function reportPeriod(): ReportPeriod
     {
         return ReportPeriod::fromFilters($this->pageFilters);
-    }
-
-    protected function formatRupiah(float $amount): string
-    {
-        return Number::currency($amount, 'IDR', precision: 0);
     }
 }

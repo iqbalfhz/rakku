@@ -7,6 +7,7 @@ use App\Filament\App\NavigationGroup;
 use App\Filament\App\Resources\Accounts\Pages\ManageAccounts;
 use App\Filament\Forms\Components\MoneyInput;
 use App\Models\Account;
+use App\Support\Rupiah;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -76,14 +77,14 @@ class AccountResource extends Resource
                     ->badge(),
                 TextColumn::make('initial_balance')
                     ->label('Saldo awal')
-                    ->money('IDR')
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('current_balance')
                     ->label('Saldo saat ini')
-                    ->money('IDR')
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)
                     ->color(fn (Account $record): string => (float) $record->current_balance < 0 ? 'danger' : 'success')
                     ->sortable()
-                    ->summarize(Sum::make()->label('Total saldo')->money('IDR')),
+                    ->summarize(Sum::make()->label('Total saldo')->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)),
             ])
             ->filters([
                 SelectFilter::make('type')

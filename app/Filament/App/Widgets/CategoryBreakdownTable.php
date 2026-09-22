@@ -4,6 +4,7 @@ namespace App\Filament\App\Widgets;
 
 use App\Enums\TransactionType;
 use App\Filament\App\Widgets\Concerns\InteractsWithLedgerReport;
+use App\Support\Rupiah;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -33,7 +34,7 @@ class CategoryBreakdownTable extends TableWidget
                     ->label('Kategori'),
                 TextColumn::make('total')
                     ->label('Jumlah')
-                    ->money('IDR')
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)
                     ->color($type->getColor()),
                 TextColumn::make('share')
                     ->label('Porsi')

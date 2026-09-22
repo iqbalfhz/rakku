@@ -4,6 +4,7 @@ namespace App\Filament\App\Resources\Invoices\Schemas;
 
 use App\Filament\Forms\Components\MoneyInput;
 use App\Models\Invoice;
+use App\Support\Rupiah;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -14,7 +15,6 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Number;
 
 class InvoiceForm
 {
@@ -84,7 +84,7 @@ class InvoiceForm
                             ]),
                         TextEntry::make('total')
                             ->label('Total')
-                            ->state(fn (Get $get): string => Number::currency(self::calculateTotal($get('items') ?? []), 'IDR'))
+                            ->state(fn (Get $get): string => Rupiah::format(self::calculateTotal($get('items') ?? [])))
                             ->weight('bold'),
                     ]),
                 Textarea::make('notes')

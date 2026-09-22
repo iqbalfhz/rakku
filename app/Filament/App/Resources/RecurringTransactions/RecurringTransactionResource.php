@@ -9,6 +9,7 @@ use App\Filament\App\NavigationGroup;
 use App\Filament\App\Resources\RecurringTransactions\Pages\ManageRecurringTransactions;
 use App\Filament\Forms\Components\MoneyInput;
 use App\Models\RecurringTransaction;
+use App\Support\Rupiah;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -79,7 +80,7 @@ class RecurringTransactionResource extends Resource
                     ->preload(),
                 MoneyInput::make('amount')
                     ->label('Nominal')
-                    ->minValue(0.01)
+                    ->minValue(1)
                     ->required(),
                 Textarea::make('description')
                     ->label('Keterangan')
@@ -119,7 +120,7 @@ class RecurringTransactionResource extends Resource
                     ->badge(),
                 TextColumn::make('amount')
                     ->label('Nominal')
-                    ->money('IDR'),
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES),
                 TextColumn::make('frequency')
                     ->label('Frekuensi')
                     ->badge()

@@ -7,6 +7,7 @@ use App\Filament\App\NavigationGroup;
 use App\Filament\App\Resources\Budgets\Pages\ManageBudgets;
 use App\Filament\Forms\Components\MoneyInput;
 use App\Models\Budget;
+use App\Support\Rupiah;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -85,11 +86,11 @@ class BudgetResource extends Resource
                     ->label('Kategori'),
                 TextColumn::make('amount')
                     ->label('Limit')
-                    ->money('IDR')
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)
                     ->sortable(),
                 TextColumn::make('spent')
                     ->label('Terpakai')
-                    ->money('IDR')
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)
                     ->default(0),
                 TextColumn::make('usage')
                     ->label('Pemakaian')
@@ -104,7 +105,7 @@ class BudgetResource extends Resource
                 TextColumn::make('remaining')
                     ->label('Sisa')
                     ->state(fn (Budget $record): float => (float) $record->amount - (float) $record->spent)
-                    ->money('IDR')
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)
                     ->color(fn (float $state): ?string => $state < 0 ? 'danger' : null),
                 IconColumn::make('alert_enabled')
                     ->label('Notifikasi')

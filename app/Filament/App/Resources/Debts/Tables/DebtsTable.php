@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources\Debts\Tables;
 use App\Enums\DebtStatus;
 use App\Enums\DebtType;
 use App\Models\Debt;
+use App\Support\Rupiah;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
@@ -28,11 +29,11 @@ class DebtsTable
                     ->searchable(),
                 TextColumn::make('amount')
                     ->label('Jumlah awal')
-                    ->money('IDR')
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)
                     ->sortable(),
                 TextColumn::make('remaining_amount')
                     ->label('Sisa')
-                    ->money('IDR')
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)
                     ->sortable(),
                 TextColumn::make('due_date')
                     ->label('Jatuh tempo')

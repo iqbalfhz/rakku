@@ -8,6 +8,7 @@ use App\Filament\App\Resources\Transactions\Pages\ManageTransactions;
 use App\Filament\Exports\TransactionExporter;
 use App\Filament\Forms\Components\MoneyInput;
 use App\Models\Transaction;
+use App\Support\Rupiah;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -81,7 +82,7 @@ class TransactionResource extends Resource
                     ->preload(),
                 MoneyInput::make('amount')
                     ->label('Nominal')
-                    ->minValue(0.01)
+                    ->minValue(1)
                     ->required(),
                 Textarea::make('description')
                     ->label('Keterangan')
@@ -123,7 +124,7 @@ class TransactionResource extends Resource
                     ->searchable(),
                 TextColumn::make('amount')
                     ->label('Nominal')
-                    ->money('IDR')
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)
                     ->color(fn (Transaction $record): string => $record->type->getColor())
                     ->sortable(),
                 IconColumn::make('recurring_transaction_id')

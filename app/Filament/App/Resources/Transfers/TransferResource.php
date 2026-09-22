@@ -6,6 +6,7 @@ use App\Filament\App\NavigationGroup;
 use App\Filament\App\Resources\Transfers\Pages\ManageTransfers;
 use App\Filament\Forms\Components\MoneyInput;
 use App\Models\Transfer;
+use App\Support\Rupiah;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -54,7 +55,7 @@ class TransferResource extends Resource
                     ->required(),
                 MoneyInput::make('amount')
                     ->label('Nominal')
-                    ->minValue(0.01)
+                    ->minValue(1)
                     ->required(),
                 DatePicker::make('transfer_date')
                     ->label('Tanggal')
@@ -82,7 +83,7 @@ class TransferResource extends Resource
                     ->label('Ke akun'),
                 TextColumn::make('amount')
                     ->label('Nominal')
-                    ->money('IDR')
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)
                     ->sortable(),
                 TextColumn::make('description')
                     ->label('Keterangan')

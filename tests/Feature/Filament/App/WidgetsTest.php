@@ -78,7 +78,8 @@ it('lists the profit and loss breakdown per category for the selected period', f
         'pageFilters' => ['period' => 'monthly', 'year' => 2026, 'month' => 9],
     ])
         ->assertSee('Bahan Baku')
-        ->assertSee("Rp\u{A0}400.000,00");
+        ->assertSee("Rp\u{A0}400.000")
+        ->assertDontSee('400.000,00');
 });
 
 it('hides advanced insight widgets from free users', function () {

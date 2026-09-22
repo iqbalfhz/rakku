@@ -5,7 +5,7 @@ namespace App\Filament\Forms\Components;
 use Filament\Forms\Components\TextInput;
 
 /**
- * Input nominal rupiah yang seragam di seluruh form.
+ * Input nominal rupiah (tanpa sen) yang seragam di seluruh form.
  */
 class MoneyInput extends TextInput
 {
@@ -16,7 +16,7 @@ class MoneyInput extends TextInput
         $this->numeric()
             ->prefix('Rp')
             ->minValue(0)
-            ->maxValue(9_999_999_999_999.99)
-            ->step(0.01);
+            ->maxValue(9_999_999_999_999)
+            ->step(1);
     }
 }

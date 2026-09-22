@@ -35,7 +35,7 @@ class DebtForm
                             ->maxLength(255),
                         MoneyInput::make('amount')
                             ->label('Jumlah awal')
-                            ->minValue(0.01)
+                            ->minValue(1)
                             ->required(),
                         DatePicker::make('due_date')
                             ->label('Jatuh tempo'),

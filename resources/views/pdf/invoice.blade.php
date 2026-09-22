@@ -1,6 +1,4 @@
-@php
-    $formatRupiah = fn (float $amount): string => 'Rp '.number_format($amount, 0, ',', '.');
-@endphp
+@use(App\Support\Rupiah)
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -65,15 +63,15 @@
                 <tr>
                     <td>{{ $item->description }}</td>
                     <td class="text-right">{{ rtrim(rtrim(number_format((float) $item->quantity, 2, ',', '.'), '0'), ',') }}</td>
-                    <td class="text-right">{{ $formatRupiah((float) $item->unit_price) }}</td>
-                    <td class="text-right">{{ $formatRupiah($item->subtotal()) }}</td>
+                    <td class="text-right">{{ Rupiah::format((float) $item->unit_price) }}</td>
+                    <td class="text-right">{{ Rupiah::format($item->subtotal()) }}</td>
                 </tr>
             @endforeach
         </tbody>
         <tfoot>
             <tr>
                 <td colspan="3" class="text-right">Total</td>
-                <td class="text-right">{{ $formatRupiah($invoice->totalAmount()) }}</td>
+                <td class="text-right">{{ Rupiah::format($invoice->totalAmount()) }}</td>
             </tr>
         </tfoot>
     </table>

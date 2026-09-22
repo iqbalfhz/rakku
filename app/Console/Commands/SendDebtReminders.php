@@ -3,12 +3,12 @@
 namespace App\Console\Commands;
 
 use App\Models\Debt;
+use App\Support\Rupiah;
 use Filament\Notifications\Notification;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Number;
 
 #[Signature('app:send-debt-reminders')]
 #[Description('Kirim pengingat utang-piutang yang mendekati jatuh tempo (khusus pengguna premium)')]
@@ -47,7 +47,7 @@ class SendDebtReminders extends Command
                     ->title("{$debt->summaryLabel()} jatuh tempo {$this->dueLabel($debt)}")
                     ->body(sprintf(
                         'Sisa %s di buku %s.',
-                        Number::currency((float) $debt->remaining_amount, 'IDR'),
+                        Rupiah::format((float) $debt->remaining_amount),
                         $debt->book->name,
                     ))
                     ->sendToDatabase($debt->book->user);

@@ -73,6 +73,20 @@ it('rejects a category whose type does not match the transaction', function () {
         ->assertHasFormErrors(['category_id']);
 });
 
+it('shows validation messages in Indonesian', function () {
+    $book = actingInBook(User::factory()->create());
+    $account = Account::factory()->for($book)->create();
+
+    Livewire::test(ManageTransactions::class)
+        ->callAction(CreateAction::class, data: [
+            'type' => TransactionType::Expense->value,
+            'transaction_date' => '2026-09-01',
+            'account_id' => $account->id,
+            'amount' => null,
+        ])
+        ->assertHasFormErrors(['amount' => 'Kolom nominal wajib diisi.']);
+});
+
 it('only lists transactions of the current book', function () {
     $foreignTransaction = Transaction::factory()->create();
     $book = actingInBook(User::factory()->create());

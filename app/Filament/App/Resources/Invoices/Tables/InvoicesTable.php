@@ -8,6 +8,7 @@ use App\Filament\App\Resources\Invoices\Actions\DownloadInvoicePdfAction;
 use App\Filament\App\Resources\Invoices\Actions\MarkInvoiceAsPaidAction;
 use App\Filament\App\Resources\Invoices\Actions\MarkInvoiceAsSentAction;
 use App\Models\Invoice;
+use App\Support\Rupiah;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -40,7 +41,7 @@ class InvoicesTable
                     ->sortable(),
                 TextColumn::make('total_amount')
                     ->label('Total')
-                    ->money('IDR')
+                    ->money(Rupiah::CURRENCY, decimalPlaces: Rupiah::DECIMAL_PLACES)
                     ->sortable(),
                 TextColumn::make('status')
                     ->label('Status')
