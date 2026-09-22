@@ -22,13 +22,17 @@ class InvoiceMail extends Mailable
     public function __construct(public Invoice $invoice) {}
 
     /**
-     * Balasan klien diarahkan ke email pemilik buku.
+     * Klien melihat nama buku sebagai pengirim, dan balasannya masuk ke email pemilik buku.
+     * Alamat pengirim tetap alamat platform karena hanya alamat itu yang diizinkan server SMTP.
      */
     public function envelope(): Envelope
     {
+        $book = $this->invoice->book;
+
         return new Envelope(
-            subject: "Invoice {$this->invoice->invoice_number} dari {$this->invoice->book->name}",
-            replyTo: [new Address($this->invoice->book->user->email, $this->invoice->book->name)],
+            subject: "Invoice {$this->invoice->invoice_number} dari {$book->name}",
+            from: new Address(config('mail.from.address'), $book->name),
+            replyTo: [new Address($book->user->email, $book->name)],
         );
     }
 

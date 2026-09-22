@@ -3,6 +3,7 @@
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 
 it('serves the invoice PDF through a valid signed link without login', function () {
     $invoice = Invoice::factory()->sent()->create(['invoice_number' => 'INV-2026-0009']);
@@ -29,7 +30,17 @@ it('rejects the PDF link when the signature is missing or tampered', function ()
     $otherInvoice = Invoice::factory()->sent()->create();
 
     $this->get(route('invoices.shared-pdf', $invoice))->assertForbidden();
-    $this->get(str_replace("/invoices/{$invoice->id}/", "/invoices/{$otherInvoice->id}/", $invoice->sharedPdfUrl()))->assertForbidden();
+    $this->get(str_replace($invoice->public_id, $otherInvoice->public_id, $invoice->sharedPdfUrl()))->assertForbidden();
+});
+
+it('addresses the shared PDF by a random public id instead of the sequential database id', function () {
+    $invoice = Invoice::factory()->sent()->create();
+    InvoiceItem::factory()->for($invoice)->create();
+
+    expect(Str::isUlid($invoice->public_id))->toBeTrue()
+        ->and($invoice->sharedPdfUrl())->toContain("/invoices/{$invoice->public_id}/pdf");
+
+    $this->get(URL::signedRoute('invoices.shared-pdf', ['invoice' => $invoice->id]))->assertNotFound();
 });
 
 it('rejects the PDF link after it expires', function () {

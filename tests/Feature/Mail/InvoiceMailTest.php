@@ -20,6 +20,7 @@ it('summarizes the invoice, attaches its PDF, and routes replies to the book own
     $mailable = new InvoiceMail($invoice);
 
     $mailable->assertHasSubject("Invoice INV-2026-0003 dari Nadi's Fotocopy");
+    $mailable->assertFrom(config('mail.from.address'), "Nadi's Fotocopy");
     $mailable->assertHasReplyTo('pemilik@rakku.test', "Nadi's Fotocopy");
     $mailable->assertSeeInText('Halo CV Maju Jaya');
     $mailable->assertSeeInText("Rp\u{A0}80.000");

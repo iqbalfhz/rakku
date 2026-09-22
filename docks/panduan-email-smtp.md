@@ -14,7 +14,7 @@ Dokumen ini menjelaskan cara menghubungkan RakKu ke server email agar verifikasi
 
 Semuanya melewati **queue**, dan queue diproses oleh Scheduled Task `php artisan schedule:run` yang jalan tiap menit di Coolify. Kalau Scheduled Task mati, email tidak akan pernah terkirim walaupun SMTP-nya benar.
 
-**Catatan alamat pengirim:** semua email keluar dari satu akun SMTP milik platform. Khusus invoice, `replyTo` diisi email pemilik buku (lihat [`app/Mail/InvoiceMail.php`](../app/Mail/InvoiceMail.php)), jadi saat klien menekan Reply, balasannya masuk ke inbox pemilik buku — bukan ke inbox platform.
+**Catatan alamat pengirim:** semua email keluar dari satu akun SMTP milik platform. Khusus invoice (lihat [`app/Mail/InvoiceMail.php`](../app/Mail/InvoiceMail.php)), klien melihat **nama buku** sebagai nama pengirim, dan `replyTo` diarahkan ke email pemilik buku sehingga balasan masuk ke inbox pemilik, bukan inbox platform. Alamat pengirimnya sendiri tetap `MAIL_FROM_ADDRESS` karena server SMTP hanya mengizinkan alamat yang terautentikasi.
 
 ---
 

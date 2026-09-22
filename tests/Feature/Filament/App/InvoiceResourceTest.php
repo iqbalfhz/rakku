@@ -3,6 +3,7 @@
 use App\Actions\SendInvoiceByEmail;
 use App\Enums\InvoiceStatus;
 use App\Enums\TransactionType;
+use App\Filament\App\Resources\Invoices\InvoiceResource;
 use App\Filament\App\Resources\Invoices\Pages\CreateInvoice;
 use App\Filament\App\Resources\Invoices\Pages\EditInvoice;
 use App\Filament\App\Resources\Invoices\Pages\ListInvoices;
@@ -91,6 +92,19 @@ it('only offers the payment action for sent or overdue invoices', function () {
     Livewire::test(ListInvoices::class)
         ->assertActionHidden(TestAction::make('markAsPaid')->table($draft))
         ->assertActionVisible(TestAction::make('markAsPaid')->table($overdue));
+});
+
+it('keeps the sequential id out of the invoice edit URL', function () {
+    $book = actingInBook($user = User::factory()->premium()->create());
+    $invoice = Invoice::factory()->for($book)->create();
+
+    $editUrl = InvoiceResource::getUrl('edit', ['record' => $invoice]);
+
+    expect($editUrl)->toContain($invoice->public_id)
+        ->and($editUrl)->not->toContain("/invoices/{$invoice->id}/");
+
+    $this->actingAs($user)->get($editUrl)->assertSuccessful();
+    $this->actingAs($user)->get(str_replace($invoice->public_id, (string) $invoice->id, $editUrl))->assertNotFound();
 });
 
 it('locks the form and hides saving once the invoice is paid', function () {
