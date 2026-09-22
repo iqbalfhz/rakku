@@ -44,7 +44,8 @@ ENV SERVER_NAME=":80"
 EXPOSE 80
 
 # /up menjawab tanpa menyentuh database, jadi menguji "aplikasi melayani request".
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+# start-period 60 detik: entrypoint menjalankan migrate + optimize (kompilasi view Filament) sebelum FrankenPHP menyala.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl -fsS http://127.0.0.1:80/up || exit 1
 
 ENTRYPOINT ["entrypoint"]
