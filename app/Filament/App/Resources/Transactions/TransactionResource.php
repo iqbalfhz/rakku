@@ -37,7 +37,9 @@ class TransactionResource extends Resource
 {
     protected static ?string $model = Transaction::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsUpDown;
+
+    protected static string|BackedEnum|null $activeNavigationIcon = Heroicon::ArrowsUpDown;
 
     protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Transactions;
 

@@ -15,6 +15,8 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -43,6 +45,11 @@ class AppPanelProvider extends PanelProvider
             ->tenantProfile(EditBookProfile::class)
             ->databaseNotifications()
             ->databaseTransactions()
+            ->sidebarFullyCollapsibleOnDesktop()
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_NAV_END,
+                fn (): View => view('filament.app.sidebar-accordion'),
+            )
             ->userMenuItems([
                 Action::make('adminPanel')
                     ->label('Panel admin')

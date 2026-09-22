@@ -24,11 +24,15 @@ class DebtResource extends Resource
 
     protected static ?string $model = Debt::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedScale;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
+
+    protected static string|BackedEnum|null $activeNavigationIcon = Heroicon::Banknotes;
 
     protected static string|UnitEnum|null $navigationGroup = NavigationGroup::DebtsAndInvoices;
 
     protected static ?int $navigationSort = 1;
+
+    protected static ?string $navigationLabel = 'Utang-Piutang';
 
     protected static ?string $modelLabel = 'utang-piutang';
 

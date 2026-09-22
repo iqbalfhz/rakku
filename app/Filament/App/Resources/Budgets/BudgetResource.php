@@ -29,7 +29,9 @@ class BudgetResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartPie;
 
-    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::MasterData;
+    protected static string|BackedEnum|null $activeNavigationIcon = Heroicon::ChartPie;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::ReportsAndBudgets;
 
     protected static ?int $navigationSort = 3;
 

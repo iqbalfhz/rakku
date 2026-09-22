@@ -24,9 +24,11 @@ class ProfitLossReport extends BaseDashboard
 
     protected static ?string $navigationLabel = 'Laba-Rugi';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalculator;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
 
-    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Reports;
+    protected static string|BackedEnum|null $activeNavigationIcon = Heroicon::DocumentChartBar;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::ReportsAndBudgets;
 
     protected static ?int $navigationSort = 2;
 

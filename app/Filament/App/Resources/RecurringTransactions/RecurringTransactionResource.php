@@ -34,7 +34,9 @@ class RecurringTransactionResource extends Resource
 
     protected static ?string $model = RecurringTransaction::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowPath;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowPathRoundedSquare;
+
+    protected static string|BackedEnum|null $activeNavigationIcon = Heroicon::ArrowPathRoundedSquare;
 
     protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Transactions;
 

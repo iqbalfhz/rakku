@@ -23,7 +23,9 @@ class CashFlowReport extends BaseDashboard
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPresentationChartLine;
 
-    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::Reports;
+    protected static string|BackedEnum|null $activeNavigationIcon = Heroicon::PresentationChartLine;
+
+    protected static string|UnitEnum|null $navigationGroup = NavigationGroup::ReportsAndBudgets;
 
     protected static ?int $navigationSort = 1;
 
