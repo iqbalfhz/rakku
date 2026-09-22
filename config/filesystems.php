@@ -29,6 +29,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Payment Proof Disk
+    |--------------------------------------------------------------------------
+    |
+    | Disk privat untuk bukti transfer langganan premium. Hanya dilihat admin
+    | saat memverifikasi pembayaran.
+    |
+    */
+
+    'payment_proofs' => env('PAYMENT_PROOFS_DISK', 'local'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |

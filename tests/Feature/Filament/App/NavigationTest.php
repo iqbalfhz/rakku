@@ -18,7 +18,7 @@ it('orders the sidebar from daily transactions down to book settings', function 
         ->all();
 
     expect($navigation)->toBe([
-        '' => ['Ringkasan'],
+        '' => ['Ringkasan', 'Langganan'],
         'Transaksi' => ['Transaksi', 'Transfer Antar Akun', 'Transaksi Berulang'],
         'Laporan & Anggaran' => ['Cash Flow', 'Laba-Rugi', 'Budget Bulanan'],
         'Utang & Invoice' => ['Utang-Piutang', 'Invoice', 'Klien'],
