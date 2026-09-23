@@ -1,0 +1,291 @@
+/*
+ * RakKu mobile — bahasa visual "pita struk".
+ * Kertas hangat, garis rambut, angka serif besar, dan tepi berlubang seperti
+ * kertas yang disobek dari gulungan. Ditulis sebagai CSS biasa supaya aplikasi
+ * ponsel tidak perlu proses build aset sama sekali.
+ */
+
+@font-face {
+    font-family: 'Instrument Serif';
+    src: url('/fonts/instrument-serif.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+}
+
+@font-face {
+    font-family: 'Instrument Serif';
+    src: url('/fonts/instrument-serif-italic.woff2') format('woff2');
+    font-weight: 400;
+    font-style: italic;
+    font-display: block;
+}
+
+@font-face {
+    font-family: 'Instrument Sans';
+    src: url('/fonts/instrument-sans.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+}
+
+@font-face {
+    font-family: 'Instrument Sans';
+    src: url('/fonts/instrument-sans-600.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: block;
+}
+
+:root {
+    --paper: #f7f3ea;
+    --paper-raised: #fffdf8;
+    --ink: #17160f;
+    --ink-soft: #6b6659;
+    --rule: #ded5c2;
+    --accent: #0c6b52;
+    --accent-ink: #f7f3ea;
+    --accent-wash: #dfeee7;
+    --debit: #a83d28;
+    --shadow: 0 18px 40px -28px rgba(23, 22, 15, .55);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --paper: #14130f;
+        --paper-raised: #1d1c16;
+        --ink: #efe9dc;
+        --ink-soft: #9a9384;
+        --rule: #35332a;
+        --accent: #3fb894;
+        --accent-ink: #10221c;
+        --accent-wash: #1d322b;
+        --debit: #e08161;
+        --shadow: 0 18px 40px -28px rgba(0, 0, 0, .8);
+    }
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    margin: 0;
+    min-height: 100%;
+}
+
+body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    /* Serat kertas: dua garis miring sangat tipis, nyaris tak terlihat tapi menghidupkan latar. */
+    background-image: repeating-linear-gradient(
+        115deg,
+        transparent 0 7px,
+        color-mix(in srgb, var(--ink) 2%, transparent) 7px 8px
+    );
+}
+
+.shell {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 28px);
+}
+
+/* Kepala halaman: nama aplikasi kecil di atas, judul serif besar di bawahnya. */
+.masthead { margin-bottom: 28px; }
+
+.masthead__brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+}
+
+.masthead__brand::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+}
+
+.masthead__title {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
+    font-size: 40px;
+    line-height: 1.08;
+    margin: 14px 0 6px;
+    letter-spacing: -.01em;
+}
+
+.masthead__note {
+    margin: 0;
+    color: var(--ink-soft);
+}
+
+/* Pita struk: kartu dengan tepi atas-bawah berlubang seperti kertas sobek. */
+.tape {
+    position: relative;
+    background: var(--paper-raised);
+    border-left: 1px solid var(--rule);
+    border-right: 1px solid var(--rule);
+    padding: 24px 22px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+}
+
+.tape::before,
+.tape::after {
+    content: '';
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    height: 8px;
+    background-image: radial-gradient(circle at 5px 0, transparent 5px, var(--paper-raised) 5px);
+    background-size: 12px 9px;
+    background-repeat: repeat-x;
+}
+
+.tape::before { top: -8px; transform: scaleY(-1); }
+.tape::after { bottom: -8px; }
+
+.tape__label {
+    font-size: 11px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+}
+
+/* Angka besar bergaya serif, rata dengan lebar digit yang sama. */
+.numeral {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 44px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.015em;
+    margin: 0;
+}
+
+.numeral--credit { color: var(--accent); }
+.numeral--debit { color: var(--debit); }
+
+/* Cap stempel: kotak miring beroutline, seperti stempel karet di kertas. */
+.stamp {
+    display: inline-block;
+    transform: rotate(-2deg);
+    border: 1.5px solid currentColor;
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.stamp--muted { color: var(--ink-soft); }
+
+/* Baris buku kas: keterangan di kiri, nominal di kanan, dipisah garis rambut. */
+.entry {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+}
+
+.entry:last-child { border-bottom: 0; padding-bottom: 0; }
+
+.entry__label { min-width: 0; }
+.entry__title { margin: 0; }
+.entry__meta { margin: 2px 0 0; font-size: 13px; color: var(--ink-soft); }
+
+.entry__amount {
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+/* Isian bergaya formulir kertas: garis di bawah, bukan kotak. */
+.field { margin-bottom: 26px; }
+
+.field__label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+}
+
+.field__input {
+    width: 100%;
+    padding: 10px 2px;
+    font-family: inherit;
+    font-size: 18px;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    border-bottom: 1.5px solid var(--rule);
+    border-radius: 0;
+    transition: border-color .15s ease;
+}
+
+.field__input:focus {
+    outline: none;
+    border-bottom-color: var(--accent);
+}
+
+.field__input::placeholder { color: color-mix(in srgb, var(--ink-soft) 60%, transparent); }
+
+.field__hint { margin: 8px 0 0; font-size: 13px; color: var(--debit); }
+
+/* Tombol: bundar penuh, tinggi 56px supaya nyaman ditekan jempol. */
+.button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 56px;
+    padding: 0 24px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    border: 0;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    transition: transform .08s ease, opacity .15s ease;
+}
+
+.button:active { transform: scale(.985); }
+.button[disabled] { opacity: .55; }
+
+.button--quiet {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1.5px solid var(--rule);
+}
+
+/* Pesan gagal: ditandai garis tebal di tepi kiri, seperti coretan pena merah. */
+.notice {
+    border-left: 3px solid var(--debit);
+    background: color-mix(in srgb, var(--debit) 8%, transparent);
+    color: var(--debit);
+    padding: 12px 14px;
+    margin-bottom: 24px;
+    font-size: 14px;
+}
+
+.stack > * + * { margin-top: 16px; }
+
+.muted { color: var(--ink-soft); }
+.small { font-size: 13px; }

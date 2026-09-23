@@ -4,7 +4,6 @@ use App\Services\ApiClient;
 use App\Services\TokenStore;
 use Livewire\Component;
 
-
 new class extends Component
 {
     public string $email = '';
@@ -57,29 +56,38 @@ new class extends Component
 ?>
 
 <div>
-    <h1>Masuk ke RakKu</h1>
-    <p class="lead">Pakai akun yang sama dengan aplikasi webnya.</p>
+    <header class="masthead">
+        <p class="masthead__brand">RakKu</p>
+        <h1 class="masthead__title">Buku kas<br>dalam saku.</h1>
+        <p class="masthead__note">Masuk dengan akun yang sama seperti di web.</p>
+    </header>
 
     @if ($error)
-        <p class="error">{{ $error }}</p>
+        <p class="notice">{{ $error }}</p>
     @endif
 
     <form wire:submit="submit">
         <div class="field">
-            <label for="email">Email</label>
-            <input id="email" type="email" inputmode="email" autocomplete="username" wire:model="email">
-            @error('email') <p class="muted">{{ $message }}</p> @enderror
+            <label class="field__label" for="email">Email</label>
+            <input class="field__input" id="email" type="email" inputmode="email" autocomplete="username"
+                   placeholder="nama@email.com" wire:model="email">
+            @error('email') <p class="field__hint">{{ $message }}</p> @enderror
         </div>
 
         <div class="field">
-            <label for="password">Kata sandi</label>
-            <input id="password" type="password" autocomplete="current-password" wire:model="password">
-            @error('password') <p class="muted">{{ $message }}</p> @enderror
+            <label class="field__label" for="password">Kata sandi</label>
+            <input class="field__input" id="password" type="password" autocomplete="current-password"
+                   placeholder="••••••••" wire:model="password">
+            @error('password') <p class="field__hint">{{ $message }}</p> @enderror
         </div>
 
-        <button type="submit" wire:loading.attr="disabled">
+        <button class="button" type="submit" wire:loading.attr="disabled">
             <span wire:loading.remove wire:target="submit">Masuk</span>
             <span wire:loading wire:target="submit">Menghubungi server…</span>
         </button>
     </form>
+
+    <p class="muted small" style="margin-top: 28px;">
+        Belum punya akun? Daftar dulu lewat rakku.iqbalfhz.my.id, lalu masuk dari sini.
+    </p>
 </div>

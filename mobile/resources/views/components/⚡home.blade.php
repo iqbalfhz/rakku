@@ -26,21 +26,43 @@ new class extends Component
 
         $this->redirect(route('login'));
     }
+
+    public function syncLabel(): string
+    {
+        return $this->lastSyncedAt === null
+            ? 'Belum pernah'
+            : \Carbon\CarbonImmutable::parse($this->lastSyncedAt)->diffForHumans();
+    }
 };
 
 ?>
 
 <div>
-    <h1>Halo, {{ $userName }}</h1>
-    <p class="lead">Buku aktif: {{ $bookName }}</p>
+    <header class="masthead">
+        <p class="masthead__brand">{{ $bookName }}</p>
+        <h1 class="masthead__title">Halo, {{ $userName }}</h1>
+        <p class="masthead__note">Sinkron terakhir: {{ $this->syncLabel() }}</p>
+    </header>
 
-    <div class="card">
-        <h2>Belum ada data</h2>
-        <p class="muted">
-            Pencatatan transaksi dan saldo menyusul di tahap berikutnya.
-            Sekarang aplikasi ini baru bisa masuk dan mengingat buku Anda.
+    <section class="tape">
+        <p class="tape__label">Saldo seluruh akun</p>
+        <p class="numeral">Rp —</p>
+        <p class="muted small" style="margin: 12px 0 0;">
+            Angka muncul setelah tarikan pertama dari server.
         </p>
-    </div>
+    </section>
 
-    <button class="ghost" type="button" wire:click="signOut">Keluar</button>
+    <section class="tape">
+        <p class="tape__label">Catatan terakhir</p>
+
+        <div class="entry">
+            <div class="entry__label">
+                <p class="entry__title muted">Belum ada transaksi tersalin</p>
+                <p class="entry__meta">Pencatatan menyusul di tahap berikutnya</p>
+            </div>
+            <span class="stamp stamp--muted">Kosong</span>
+        </div>
+    </section>
+
+    <button class="button button--quiet" type="button" wire:click="signOut">Keluar</button>
 </div>
