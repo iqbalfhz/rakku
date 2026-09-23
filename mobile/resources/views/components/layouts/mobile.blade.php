@@ -1,3 +1,5 @@
+@use('App\Services\TokenStore')
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -11,9 +13,23 @@
     @livewireStyles
 </head>
 <body>
-    <main class="shell">
+    <main class="shell {{ app(TokenStore::class)->isSignedIn() ? 'shell--with-tabs' : '' }}">
         {{ $slot }}
     </main>
+
+    {{-- Tab kartu indeks: hanya muncul setelah pengguna masuk. --}}
+    @if (app(TokenStore::class)->isSignedIn())
+        <nav class="tabs">
+            <a class="tabs__tab {{ request()->routeIs('home') ? 'tabs__tab--on' : '' }}"
+               href="{{ route('home') }}" wire:navigate>Beranda</a>
+
+            <a class="tabs__tab tabs__tab--accent {{ request()->routeIs('record') ? 'tabs__tab--on' : '' }}"
+               href="{{ route('record') }}" wire:navigate>Catat</a>
+
+            <a class="tabs__tab {{ request()->routeIs('history') ? 'tabs__tab--on' : '' }}"
+               href="{{ route('history') }}" wire:navigate>Riwayat</a>
+        </nav>
+    @endif
 
     @livewireScripts
 </body>
