@@ -31,6 +31,11 @@ trait ShowsTicketThread
         $this->cachedSchemas = [];
     }
 
+    /**
+     * Lebar maksimal satu gelembung pesan supaya percakapan tetap enak dibaca di layar lebar.
+     */
+    private const string BUBBLE_WIDTH = '38rem';
+
     public function ticketThread(Schema $schema): Schema
     {
         /** @var SupportTicket $ticket */
@@ -41,16 +46,28 @@ trait ShowsTicketThread
                 $ticket->messages()->with('author')->get()
                     ->map(fn (SupportMessage $message): Section => $this->messageSection($message))
                     ->all(),
-            )->poll(self::THREAD_POLLING_INTERVAL),
+            )
+                ->columnSpanFull()
+                ->poll(self::THREAD_POLLING_INTERVAL),
         ]);
     }
 
+    /**
+     * Pesan admin didorong ke kanan dan pesan pengguna ke kiri, seperti percakapan pada umumnya.
+     * Gaya ditulis inline karena CSS Filament yang sudah dikompilasi tidak memuat kelas utilitas ini.
+     */
     private function messageSection(SupportMessage $message): Section
     {
-        return Section::make($message->isFromAdmin() ? "Admin — {$message->author->name}" : $message->author->name)
+        $isFromAdmin = $message->isFromAdmin();
+
+        return Section::make($isFromAdmin ? "Admin — {$message->author->name}" : $message->author->name)
             ->description($message->created_at->translatedFormat('j F Y, H:i'))
-            ->icon($message->isFromAdmin() ? 'heroicon-o-lifebuoy' : 'heroicon-o-user')
-            ->iconColor($message->isFromAdmin() ? 'primary' : 'gray')
+            ->icon($isFromAdmin ? 'heroicon-o-lifebuoy' : 'heroicon-o-user')
+            ->iconColor($isFromAdmin ? 'primary' : 'gray')
+            ->extraAttributes([
+                'style' => 'width: 100%; max-width: '.self::BUBBLE_WIDTH.'; '
+                    .($isFromAdmin ? 'margin-left: auto;' : 'margin-right: auto;'),
+            ])
             ->schema(array_filter([
                 TextEntry::make("message-{$message->id}")
                     ->hiddenLabel()
