@@ -79,6 +79,14 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
     }
 
     /**
+     * @return HasMany<SupportTicket, $this>
+     */
+    public function supportTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class);
+    }
+
+    /**
      * Langganan terbaru milik user, dipakai sebagai acuan plan saat ini.
      *
      * @return HasOne<Subscription, $this>

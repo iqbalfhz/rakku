@@ -17,7 +17,7 @@ class ExpiringPremiumTable extends TableWidget
 {
     public const int WINDOW_DAYS = 14;
 
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 4;
 
     protected int|string|array $columnSpan = 'full';
 

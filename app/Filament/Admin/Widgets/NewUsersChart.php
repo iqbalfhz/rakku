@@ -11,7 +11,7 @@ class NewUsersChart extends ChartWidget
 {
     private const int MONTHS = 12;
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 5;
 
     protected ?string $heading = 'Pengguna baru per bulan';
 
