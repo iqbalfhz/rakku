@@ -122,7 +122,7 @@ it('keeps what is already on the phone when the server cannot be reached', funct
 
     Livewire::test('home')
         ->call('sync')
-        ->assertSet('syncError', 'Gagal menyambung ke server. Catatan di ponsel tetap aman.');
+        ->assertSet('syncError', 'Gagal menyambung ke server. Catatan di ponsel tetap aman dan akan dikirim saat sinyal kembali.');
 
     expect(Account::query()->count())->toBe(1)
         ->and($this->tokenStore->lastSyncedAt())->toBeNull();

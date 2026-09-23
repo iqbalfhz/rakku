@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * Menyalin isi buku dari server ke SQLite di dalam ponsel.
+ * Menjembatani buku di server dengan salinannya di dalam ponsel.
  *
- * Akun dan kategori datang utuh setiap kali, jadi yang hilang dari server ikut
- * dihapus di sini. Transaksi datang sebagai selisih, dan baris yang ditandai
- * terhapus dibuang dari ponsel.
+ * Urutannya selalu dorong dulu, baru tarik: catatan yang dibuat di ponsel harus
+ * sampai ke server sebelum ponsel menerima gambaran terbaru, supaya tidak ada
+ * yang tertimpa sebelum sempat terkirim.
  */
 class SyncEngine
 {
@@ -22,20 +22,37 @@ class SyncEngine
         private TokenStore $tokenStore,
     ) {}
 
+    public function sync(): void
+    {
+        $this->push();
+        $this->pull();
+    }
+
+    /**
+     * Kirim catatan yang dibuat atau dihapus saat offline.
+     */
+    public function push(): void
+    {
+        $pending = Transaction::query()->pending()->get();
+
+        if ($pending->isEmpty()) {
+            return;
+        }
+
+        $this->apiClient->push($this->bookPublicId(), $pending->map($this->outgoingPayload(...))->all());
+
+        DB::transaction(function () use ($pending): void {
+            Transaction::query()->whereIn('id', $pending->where('is_deleted', true)->pluck('id'))->delete();
+            Transaction::query()->whereIn('id', $pending->where('is_deleted', false)->pluck('id'))->update(['is_dirty' => false]);
+        });
+    }
+
     /**
      * Tarik perubahan sejak sinkron terakhir.
-     *
-     * @throws RuntimeException saat ponsel belum memilih buku
      */
     public function pull(): void
     {
-        $bookPublicId = $this->tokenStore->bookPublicId();
-
-        if ($bookPublicId === null) {
-            throw new RuntimeException('Belum ada buku yang dipilih.');
-        }
-
-        $payload = $this->apiClient->pull($bookPublicId, $this->tokenStore->lastSyncedAt());
+        $payload = $this->apiClient->pull($this->bookPublicId(), $this->tokenStore->lastSyncedAt());
 
         DB::transaction(function () use ($payload): void {
             $this->replaceAccounts($payload['accounts']);
@@ -44,6 +61,35 @@ class SyncEngine
         });
 
         $this->tokenStore->rememberSync($payload['server_time']);
+    }
+
+    private function bookPublicId(): string
+    {
+        $bookPublicId = $this->tokenStore->bookPublicId();
+
+        if ($bookPublicId === null) {
+            throw new RuntimeException('Belum ada buku yang dipilih.');
+        }
+
+        return $bookPublicId;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function outgoingPayload(Transaction $transaction): array
+    {
+        return [
+            'public_id' => $transaction->public_id,
+            'account_public_id' => $transaction->account_public_id,
+            'category_public_id' => $transaction->category_public_id,
+            'type' => $transaction->type,
+            'amount' => (float) $transaction->amount,
+            'description' => $transaction->description,
+            'transaction_date' => $transaction->transaction_date->toDateString(),
+            'is_deleted' => $transaction->is_deleted,
+            'updated_at' => $transaction->updated_at->utc()->toIso8601ZuluString(),
+        ];
     }
 
     /**
@@ -90,8 +136,16 @@ class SyncEngine
     private function applyTransactions(array $transactions): void
     {
         foreach ($transactions as $transaction) {
+            $local = Transaction::query()->where('public_id', $transaction['public_id'])->first();
+
+            // Catatan yang belum terkirim tidak boleh ditimpa jawaban server:
+            // isinya lebih baru daripada yang server tahu.
+            if ($local?->is_dirty) {
+                continue;
+            }
+
             if ($transaction['is_deleted'] ?? false) {
-                Transaction::query()->where('public_id', $transaction['public_id'])->delete();
+                $local?->delete();
 
                 continue;
             }
@@ -107,6 +161,8 @@ class SyncEngine
                     'transaction_date' => $transaction['transaction_date'],
                     'has_receipt' => $transaction['has_receipt'] ?? false,
                     'server_updated_at' => $transaction['updated_at'],
+                    'is_dirty' => false,
+                    'is_deleted' => false,
                 ],
             );
         }

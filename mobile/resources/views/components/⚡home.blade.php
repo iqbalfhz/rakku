@@ -3,6 +3,7 @@
 use App\Models\Account;
 use App\Models\Transaction;
 use App\Services\ApiClient;
+use App\Services\LedgerWriter;
 use App\Services\SyncEngine;
 use App\Services\TokenStore;
 use App\Support\Rupiah;
@@ -30,21 +31,31 @@ new class extends Component
     }
 
     /**
-     * Tarik perubahan dari server. Kegagalan tidak menghapus apa pun di ponsel.
+     * Kirim catatan yang tertunda, lalu tarik yang baru.
+     * Kegagalan tidak menghapus apa pun di ponsel.
      */
     public function sync(SyncEngine $syncEngine, TokenStore $tokenStore): void
     {
         $this->syncError = null;
 
         try {
-            $syncEngine->pull();
+            $syncEngine->sync();
         } catch (\Throwable) {
-            $this->syncError = 'Gagal menyambung ke server. Catatan di ponsel tetap aman.';
+            $this->syncError = 'Gagal menyambung ke server. Catatan di ponsel tetap aman dan akan dikirim saat sinyal kembali.';
 
             return;
         }
 
         $this->readSession($tokenStore);
+    }
+
+    public function remove(int $transactionId, LedgerWriter $ledgerWriter): void
+    {
+        $transaction = Transaction::query()->visible()->find($transactionId);
+
+        if ($transaction !== null) {
+            $ledgerWriter->remove($transaction);
+        }
     }
 
     public function signOut(ApiClient $apiClient, TokenStore $tokenStore): void
@@ -60,12 +71,18 @@ new class extends Component
         return Rupiah::format((float) Account::query()->sum('current_balance'));
     }
 
+    public function pendingCount(): int
+    {
+        return Transaction::query()->pending()->count();
+    }
+
     /**
      * @return Collection<int, Transaction>
      */
     public function recentTransactions(): Collection
     {
         return Transaction::query()
+            ->visible()
             ->orderByDesc('transaction_date')
             ->orderByDesc('id')
             ->limit(self::RECENT_LIMIT)
@@ -104,9 +121,17 @@ new class extends Component
         <p class="tape__label">Saldo seluruh akun</p>
         <p class="numeral">{{ $this->balance() }}</p>
 
-        <button class="button" type="button" wire:click="sync" wire:loading.attr="disabled" style="margin-top: 20px;">
+        @if ($this->pendingCount() > 0)
+            <p class="muted small" style="margin: 12px 0 0;">
+                {{ $this->pendingCount() }} catatan menunggu dikirim ke server.
+            </p>
+        @endif
+
+        <a class="button" href="{{ route('record') }}" wire:navigate style="margin-top: 20px;">Catat transaksi</a>
+
+        <button class="button button--quiet" type="button" wire:click="sync" wire:loading.attr="disabled" style="margin-top: 10px;">
             <span wire:loading.remove wire:target="sync">Sinkronkan sekarang</span>
-            <span wire:loading wire:target="sync">Menarik data…</span>
+            <span wire:loading wire:target="sync">Menyinkronkan…</span>
         </button>
     </section>
 
@@ -120,17 +145,23 @@ new class extends Component
                     <p class="entry__meta">
                         {{ $transaction->transaction_date->translatedFormat('j M Y') }}
                         @if ($transaction->account) · {{ $transaction->account->name }} @endif
+                        @if ($transaction->is_dirty) · <span class="stamp">Belum terkirim</span> @endif
                     </p>
                 </div>
-                <span class="entry__amount {{ $transaction->isIncome() ? 'numeral--credit' : 'numeral--debit' }}">
-                    {{ $transaction->isIncome() ? '+' : '−' }}{{ Rupiah::format((float) $transaction->amount) }}
-                </span>
+
+                <div style="display: flex; align-items: baseline; gap: 12px; flex-shrink: 0;">
+                    <span class="entry__amount {{ $transaction->isIncome() ? 'numeral--credit' : 'numeral--debit' }}">
+                        {{ $transaction->isIncome() ? '+' : '−' }}{{ Rupiah::format((float) $transaction->amount) }}
+                    </span>
+                    <button class="linkish" type="button" wire:click="remove({{ $transaction->id }})"
+                            wire:confirm="Hapus catatan ini?">Hapus</button>
+                </div>
             </div>
         @empty
             <div class="entry">
                 <div class="entry__label">
-                    <p class="entry__title muted">Belum ada catatan tersalin</p>
-                    <p class="entry__meta">Tekan Sinkronkan untuk menariknya dari server</p>
+                    <p class="entry__title muted">Belum ada catatan</p>
+                    <p class="entry__meta">Tekan Catat transaksi untuk menulis yang pertama</p>
                 </div>
                 <span class="stamp stamp--muted">Kosong</span>
             </div>

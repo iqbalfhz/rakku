@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'pages.login')->name('login');
 
-Route::view('/beranda', 'pages.home')
-    ->middleware(RequireSignedIn::class)
-    ->name('home');
+Route::middleware(RequireSignedIn::class)->group(function () {
+    Route::view('/beranda', 'pages.home')->name('home');
+    Route::view('/catat', 'pages.record')->name('record');
+});
