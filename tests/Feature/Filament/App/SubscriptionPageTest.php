@@ -5,7 +5,9 @@ use App\Enums\SubscriptionPaymentStatus;
 use App\Filament\App\Pages\Subscription;
 use App\Models\SubscriptionPayment;
 use App\Models\User;
+use App\Notifications\SubscriptionPaymentSubmitted;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -34,6 +36,29 @@ it('lets a free user submit a transfer proof and notifies the admins', function 
         ->and(Storage::disk('local')->exists($payment->proof_path))->toBeTrue()
         ->and($admin->notifications()->count())->toBe(1)
         ->and($user->fresh()->isPremium())->toBeFalse();
+});
+
+it('alerts only the admins, through both the panel bell and email', function () {
+    NotificationFacade::fake();
+    $admin = User::factory()->admin()->create();
+    $otherMember = User::factory()->create();
+    $user = User::factory()->create();
+    actingInBook($user);
+
+    Livewire::test(Subscription::class)
+        ->fillForm([
+            'package' => SubscriptionPackage::Monthly->value,
+            'proof_path' => UploadedFile::fake()->image('bukti-transfer.jpg'),
+        ])
+        ->call('submit')
+        ->assertHasNoFormErrors();
+
+    NotificationFacade::assertSentTo(
+        $admin,
+        SubscriptionPaymentSubmitted::class,
+        fn (SubscriptionPaymentSubmitted $notification, array $channels): bool => $channels === ['database', 'mail'],
+    );
+    NotificationFacade::assertNotSentTo([$user, $otherMember], SubscriptionPaymentSubmitted::class);
 });
 
 it('requires both a package and a proof of transfer', function () {

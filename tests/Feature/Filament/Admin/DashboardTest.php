@@ -3,7 +3,9 @@
 use App\Enums\SubscriptionPlan;
 use App\Filament\Admin\Widgets\ExpiringPremiumTable;
 use App\Filament\Admin\Widgets\NewUsersChart;
+use App\Filament\Admin\Widgets\PendingPaymentsTable;
 use App\Filament\Admin\Widgets\UserStatsOverview;
+use App\Models\SubscriptionPayment;
 use App\Models\User;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
@@ -69,4 +71,17 @@ it('renders the monthly sign-up chart', function () {
     $this->actingAs(User::factory()->admin()->create());
 
     Livewire::test(NewUsersChart::class)->assertOk();
+});
+
+it('puts pending payments on the dashboard and lets the admin approve them there', function () {
+    $this->actingAs(User::factory()->admin()->create());
+    $pendingPayment = SubscriptionPayment::factory()->create();
+    $approvedPayment = SubscriptionPayment::factory()->approved()->create();
+
+    Livewire::test(PendingPaymentsTable::class)
+        ->assertCanSeeTableRecords([$pendingPayment])
+        ->assertCanNotSeeTableRecords([$approvedPayment])
+        ->callAction(TestAction::make('approvePayment')->table($pendingPayment));
+
+    expect($pendingPayment->user->fresh()->isPremium())->toBeTrue();
 });

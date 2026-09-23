@@ -5,6 +5,7 @@ namespace App\Filament\App\Pages;
 use App\Enums\SubscriptionPackage;
 use App\Models\SubscriptionPayment;
 use App\Models\User;
+use App\Notifications\SubscriptionPaymentSubmitted;
 use App\Support\Rupiah;
 use App\Support\SubscriptionConfig;
 use BackedEnum;
@@ -18,6 +19,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Notification as FacadesNotification;
 
 class Subscription extends Page
 {
@@ -221,14 +223,6 @@ class Subscription extends Page
     {
         $admins = User::query()->where('is_admin', true)->get();
 
-        if ($admins->isEmpty()) {
-            return;
-        }
-
-        Notification::make()
-            ->warning()
-            ->title('Pengajuan premium baru')
-            ->body("{$payment->user->name} mengirim bukti transfer paket {$payment->package->getLabel()}.")
-            ->sendToDatabase($admins);
+        FacadesNotification::send($admins, new SubscriptionPaymentSubmitted($payment));
     }
 }
