@@ -4,9 +4,9 @@ namespace App\Filament\Admin\Resources\SubscriptionPayments\Actions;
 
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\SubscriptionPayment;
+use App\Notifications\SubscriptionPaymentRejected;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
-use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 
 class RejectPaymentAction extends Action
@@ -39,11 +39,7 @@ class RejectPaymentAction extends Action
                     'reviewed_at' => now(),
                 ])->save();
 
-                Notification::make()
-                    ->danger()
-                    ->title('Pembayaran belum bisa diverifikasi')
-                    ->body($data['rejection_reason'])
-                    ->sendToDatabase($record->user);
+                $record->user->notify(new SubscriptionPaymentRejected($record));
 
                 $this->successNotificationTitle('Pengajuan ditolak');
                 $this->success();

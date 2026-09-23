@@ -5,7 +5,7 @@ namespace App\Actions;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\SubscriptionPayment;
 use App\Models\User;
-use Filament\Notifications\Notification;
+use App\Notifications\SubscriptionPaymentApproved;
 
 class ApproveSubscriptionPayment
 {
@@ -24,12 +24,6 @@ class ApproveSubscriptionPayment
             'reviewed_at' => now(),
         ])->save();
 
-        Notification::make()
-            ->success()
-            ->title('Premium aktif')
-            ->body($expiresAt === null
-                ? 'Pembayaran Anda sudah diverifikasi. Premium Anda tetap berlaku tanpa batas waktu.'
-                : "Pembayaran Anda sudah diverifikasi. Premium berlaku sampai {$expiresAt->translatedFormat('j F Y')}.")
-            ->sendToDatabase($payment->user);
+        $payment->user->notify(new SubscriptionPaymentApproved($payment, $expiresAt));
     }
 }

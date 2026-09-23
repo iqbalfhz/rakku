@@ -7,8 +7,11 @@ use App\Filament\Admin\Resources\SubscriptionPayments\Pages\ListSubscriptionPaym
 use App\Filament\Admin\Resources\SubscriptionPayments\SubscriptionPaymentResource;
 use App\Models\SubscriptionPayment;
 use App\Models\User;
+use App\Notifications\SubscriptionPaymentApproved;
+use App\Notifications\SubscriptionPaymentRejected;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -63,6 +66,25 @@ it('rejects a payment with a reason the user can read', function () {
         ->and($member->fresh()->isPremium())->toBeFalse()
         ->and($member->notifications()->sole()->data['body'])->toBe('Nominal transfer kurang Rp 5.000.');
 });
+
+it('emails the user as well as ringing the bell after a review', function (string $action, string $notificationClass, array $data) {
+    NotificationFacade::fake();
+    $member = User::factory()->create();
+    $payment = SubscriptionPayment::factory()->for($member)->create();
+
+    Livewire::test(ListSubscriptionPayments::class)
+        ->callAction(TestAction::make($action)->table($payment), data: $data)
+        ->assertHasNoFormErrors();
+
+    NotificationFacade::assertSentTo(
+        $member,
+        $notificationClass,
+        fn (object $notification, array $channels): bool => $channels === ['database', 'mail'],
+    );
+})->with([
+    'disetujui' => ['approvePayment', SubscriptionPaymentApproved::class, []],
+    'ditolak' => ['rejectPayment', SubscriptionPaymentRejected::class, ['rejection_reason' => 'Nominal tidak sesuai.']],
+]);
 
 it('needs a reason before a payment can be rejected', function () {
     $payment = SubscriptionPayment::factory()->create();
