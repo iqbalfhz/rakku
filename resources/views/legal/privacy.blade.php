@@ -78,9 +78,14 @@
             <section>
                 <h2 class="font-serif text-2xl">Hak Anda</h2>
                 <p class="mt-4 leading-relaxed text-ink-soft">
-                    Anda bisa mengekspor transaksi Anda sendiri kapan saja dari dalam aplikasi. Anda juga berhak meminta
-                    salinan data, perbaikan data yang keliru, atau penghapusan akun beserta isinya. Untuk penghapusan akun,
-                    hubungi kami — permintaan itu kami kerjakan secara manual dan tidak bisa dibatalkan setelah dijalankan.
+                    Anda bisa mengekspor transaksi Anda sendiri kapan saja dari dalam aplikasi, dan berhak meminta
+                    salinan data maupun perbaikan data yang keliru.
+                </p>
+                <p class="mt-4 leading-relaxed text-ink-soft">
+                    Penghapusan akun ada di tangan Anda sendiri: buka <span class="font-medium text-ink">Profil</span>
+                    di dalam aplikasi, lalu pilih Hapus akun. Seluruh catatan dan berkas Anda ikut terhapus saat itu juga,
+                    permanen, dan tidak bisa kami pulihkan. Kalau Anda tidak bisa masuk ke akun Anda — misalnya lupa kata
+                    sandi atau email Anda sudah tidak aktif — hubungi kami dan penghapusan itu kami kerjakan untuk Anda.
                 </p>
             </section>
 

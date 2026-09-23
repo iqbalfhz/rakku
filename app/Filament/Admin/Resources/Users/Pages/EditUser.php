@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Users\Pages;
 
 use App\Filament\Admin\Resources\Users\Actions\ActivatePremiumAction;
+use App\Filament\Admin\Resources\Users\Actions\DeleteUserAction;
 use App\Filament\Admin\Resources\Users\Actions\DowngradeToFreeAction;
 use App\Filament\Admin\Resources\Users\Actions\ToggleAdminAction;
 use App\Filament\Admin\Resources\Users\Actions\VerifyEmailManuallyAction;
@@ -20,6 +21,7 @@ class EditUser extends EditRecord
             DowngradeToFreeAction::make()->after(fn () => $this->refreshSubscription()),
             VerifyEmailManuallyAction::make(),
             ToggleAdminAction::make(),
+            DeleteUserAction::make()->successRedirectUrl(fn (): string => UserResource::getUrl('index')),
         ];
     }
 

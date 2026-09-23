@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Users\Tables;
 
 use App\Filament\Admin\Resources\Users\Actions\ActivatePremiumAction;
+use App\Filament\Admin\Resources\Users\Actions\DeleteUserAction;
 use App\Filament\Admin\Resources\Users\Actions\DowngradeToFreeAction;
 use App\Filament\Admin\Resources\Users\Actions\ToggleAdminAction;
 use App\Filament\Admin\Resources\Users\Actions\VerifyEmailManuallyAction;
@@ -80,6 +81,7 @@ class UsersTable
                     DowngradeToFreeAction::make(),
                     VerifyEmailManuallyAction::make(),
                     ToggleAdminAction::make(),
+                    DeleteUserAction::make(),
                 ]),
             ]);
     }
