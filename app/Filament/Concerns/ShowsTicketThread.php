@@ -6,6 +6,7 @@ use App\Models\SupportMessage;
 use App\Models\SupportTicket;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -14,6 +15,11 @@ use Filament\Schemas\Schema;
  */
 trait ShowsTicketThread
 {
+    /**
+     * Balasan pihak seberang muncul sendiri selama halaman tiket dibuka.
+     */
+    public const string THREAD_POLLING_INTERVAL = '15s';
+
     /**
      * Skema di-cache per request, jadi setelah membalas isinya perlu dibangun ulang
      * agar pesan baru langsung tampil tanpa memuat ulang halaman.
@@ -30,11 +36,13 @@ trait ShowsTicketThread
         /** @var SupportTicket $ticket */
         $ticket = $this->getRecord();
 
-        return $schema->components(
-            $ticket->messages()->with('author')->get()
-                ->map(fn (SupportMessage $message): Section => $this->messageSection($message))
-                ->all(),
-        );
+        return $schema->components([
+            Group::make(
+                $ticket->messages()->with('author')->get()
+                    ->map(fn (SupportMessage $message): Section => $this->messageSection($message))
+                    ->all(),
+            )->poll(self::THREAD_POLLING_INTERVAL),
+        ]);
     }
 
     private function messageSection(SupportMessage $message): Section

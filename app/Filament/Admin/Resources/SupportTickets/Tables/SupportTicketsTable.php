@@ -12,9 +12,15 @@ use Illuminate\Database\Eloquent\Builder;
 
 class SupportTicketsTable
 {
+    /**
+     * Tiket baru muncul sendiri tanpa admin perlu memuat ulang halaman.
+     */
+    public const string POLLING_INTERVAL = '30s';
+
     public static function configure(Table $table): Table
     {
         return $table
+            ->poll(self::POLLING_INTERVAL)
             ->modifyQueryUsing(fn (Builder $query) => $query->with('user')->withCount('messages'))
             ->defaultSort('last_message_at')
             ->columns([

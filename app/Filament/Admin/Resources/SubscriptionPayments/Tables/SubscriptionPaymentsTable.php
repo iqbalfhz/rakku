@@ -22,9 +22,15 @@ class SubscriptionPaymentsTable
      */
     private const int PROOF_LINK_MINUTES = 5;
 
+    /**
+     * Pengajuan baru muncul sendiri tanpa admin perlu memuat ulang halaman.
+     */
+    public const string POLLING_INTERVAL = '30s';
+
     public static function configure(Table $table): Table
     {
         return $table
+            ->poll(self::POLLING_INTERVAL)
             ->modifyQueryUsing(fn (Builder $query) => $query->with('user'))
             ->defaultSort('created_at', 'desc')
             ->columns([

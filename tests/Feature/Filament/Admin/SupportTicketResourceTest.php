@@ -31,7 +31,7 @@ it('answers a ticket and notifies its owner', function () {
         ->assertHasNoActionErrors();
 
     expect($ticket->fresh()->status)->toBe(SupportTicketStatus::Answered)
-        ->and($ticket->messages()->latest('id')->first())
+        ->and($ticket->messages()->reorder()->latest('id')->first())
         ->body->toBe('Sudah kami perbaiki, mohon dicek lagi.')
         ->user_id->toBe($this->admin->id);
 
@@ -69,6 +69,23 @@ it('lists tickets that wait for an answer first', function () {
     Livewire::test(ListSupportTickets::class)
         ->assertCanSeeTableRecords([$openTicket])
         ->assertCanNotSeeTableRecords([$closedTicket]);
+});
+
+it('picks up a ticket that arrives while the list is open', function () {
+    $component = Livewire::test(ListSupportTickets::class);
+
+    $newTicket = SupportTicket::factory()->create();
+
+    $component->call('$refresh')->assertCanSeeTableRecords([$newTicket]);
+});
+
+it('picks up a reply that arrives while the thread is open', function () {
+    $ticket = SupportTicket::factory()->create();
+    $component = Livewire::test(ViewSupportTicket::class, ['record' => $ticket->getRouteKey()]);
+
+    SupportMessage::factory()->for($ticket, 'ticket')->create(['body' => 'Pesan susulan dari pengguna.']);
+
+    $component->call('$refresh')->assertSee('Pesan susulan dari pengguna.');
 });
 
 it('counts unanswered tickets in the admin menu badge', function () {

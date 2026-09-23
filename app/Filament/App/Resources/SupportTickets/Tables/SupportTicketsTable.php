@@ -11,6 +11,7 @@ class SupportTicketsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->poll('30s')
             ->defaultSort('last_message_at', 'desc')
             ->emptyStateHeading('Belum ada tiket')
             ->emptyStateDescription('Kirim tiket kalau ada yang bermasalah atau ingin ditanyakan. Admin membalas di halaman ini juga.')

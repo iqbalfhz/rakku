@@ -118,7 +118,7 @@ it('reopens the ticket when the user replies, and tells the admins', function ()
         ->assertHasNoActionErrors();
 
     expect($ticket->fresh()->status)->toBe(SupportTicketStatus::Open)
-        ->and($ticket->messages()->latest('id')->value('body'))->toBe('Masih belum cocok juga.');
+        ->and($ticket->messages()->reorder()->latest('id')->value('body'))->toBe('Masih belum cocok juga.');
 
     Notification::assertSentTo($admin, SupportTicketReplied::class);
 });
