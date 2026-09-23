@@ -3,7 +3,7 @@
 use App\Services\ApiClient;
 use App\Services\TokenStore;
 use Livewire\Component;
-use RuntimeException;
+
 
 new class extends Component
 {
@@ -27,7 +27,7 @@ new class extends Component
 
         try {
             $session = $apiClient->login($this->email, $this->password, $this->deviceName());
-        } catch (RuntimeException $exception) {
+        } catch (\RuntimeException $exception) {
             $this->error = $exception->getMessage();
 
             return;

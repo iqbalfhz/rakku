@@ -31,3 +31,6 @@ phpunit.xml
 README.md
 CLAUDE.md
 AGENTS.md
+
+# Aplikasi ponsel dibangun terpisah, tidak ikut ke image server.
+/mobile
