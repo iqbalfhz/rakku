@@ -27,6 +27,9 @@ class SupportTicketsTable
                     ->label('Pengguna')
                     ->description(fn (SupportTicket $record): string => $record->user->email)
                     ->searchable(),
+                TextColumn::make('ticket_number')
+                    ->label('Nomor')
+                    ->searchable(),
                 TextColumn::make('subject')
                     ->label('Judul')
                     ->wrap()

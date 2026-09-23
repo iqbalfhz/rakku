@@ -39,8 +39,10 @@ class ReplyToTicketAction extends Action
                     ->maxSize(5120)
                     ->openable(),
             ])
-            ->action(function (SupportTicket $record, array $data): void {
+            ->action(function (SupportTicket $record, array $data, $livewire): void {
                 app(ReplyToSupportTicket::class)->handle($record, auth()->user(), $data);
+
+                $livewire->refreshTicketThread();
 
                 $this->successNotificationTitle('Balasan terkirim');
                 $this->success();

@@ -29,6 +29,16 @@ class SupportTicketOpened extends Notification implements ShouldQueue
     }
 
     /**
+     * Lonceng panel diisi seketika; hanya emailnya yang menunggu giliran di queue.
+     *
+     * @return array<string, string>
+     */
+    public function viaConnections(): array
+    {
+        return ['database' => 'sync'];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toDatabase(object $notifiable): array
@@ -36,7 +46,7 @@ class SupportTicketOpened extends Notification implements ShouldQueue
         return FilamentNotification::make()
             ->warning()
             ->title('Tiket bantuan baru')
-            ->body("{$this->ticket->user->name}: {$this->ticket->subject}")
+            ->body("{$this->ticket->ticket_number} · {$this->ticket->user->name}: {$this->ticket->subject}")
             ->actions([
                 Action::make('open')
                     ->label('Buka tiket')
@@ -49,9 +59,10 @@ class SupportTicketOpened extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Tiket bantuan baru: {$this->ticket->subject}")
+            ->subject("Tiket {$this->ticket->ticket_number}: {$this->ticket->subject}")
             ->greeting("Halo {$notifiable->name},")
             ->line("{$this->ticket->user->name} ({$this->ticket->user->email}) mengirim tiket bantuan.")
+            ->line("Nomor tiket: {$this->ticket->ticket_number}")
             ->line("Judul: {$this->ticket->subject}")
             ->line($this->ticket->messages()->value('body') ?? '')
             ->action('Buka tiket', $this->ticketUrl());

@@ -26,6 +26,33 @@ class SupportTicket extends Model
     ];
 
     /**
+     * Nomor tiket diberikan otomatis agar pengguna dan admin menyebut tiket yang sama.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $ticket): void {
+            $ticket->ticket_number ??= self::nextNumber();
+        });
+    }
+
+    /**
+     * Nomor berurutan per tahun, contoh: TKT-2026-0001.
+     */
+    public static function nextNumber(): string
+    {
+        $prefix = 'TKT-'.today()->year.'-';
+
+        $lastNumber = static::query()
+            ->where('ticket_number', 'like', $prefix.'%')
+            ->orderByDesc('ticket_number')
+            ->value('ticket_number');
+
+        $sequence = $lastNumber === null ? 1 : (int) substr($lastNumber, strlen($prefix)) + 1;
+
+        return $prefix.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

@@ -15,6 +15,9 @@ class SupportTicketsTable
             ->emptyStateHeading('Belum ada tiket')
             ->emptyStateDescription('Kirim tiket kalau ada yang bermasalah atau ingin ditanyakan. Admin membalas di halaman ini juga.')
             ->columns([
+                TextColumn::make('ticket_number')
+                    ->label('Nomor')
+                    ->searchable(),
                 TextColumn::make('subject')
                     ->label('Judul')
                     ->wrap()

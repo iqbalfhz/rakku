@@ -30,6 +30,16 @@ class SubscriptionPaymentSubmitted extends Notification implements ShouldQueue
     }
 
     /**
+     * Lonceng panel diisi seketika; hanya emailnya yang menunggu giliran di queue.
+     *
+     * @return array<string, string>
+     */
+    public function viaConnections(): array
+    {
+        return ['database' => 'sync'];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toDatabase(object $notifiable): array

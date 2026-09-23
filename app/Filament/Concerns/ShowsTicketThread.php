@@ -14,6 +14,17 @@ use Filament\Schemas\Schema;
  */
 trait ShowsTicketThread
 {
+    /**
+     * Skema di-cache per request, jadi setelah membalas isinya perlu dibangun ulang
+     * agar pesan baru langsung tampil tanpa memuat ulang halaman.
+     */
+    public function refreshTicketThread(): void
+    {
+        $this->getRecord()->unsetRelation('messages');
+
+        $this->cachedSchemas = [];
+    }
+
     public function ticketThread(Schema $schema): Schema
     {
         /** @var SupportTicket $ticket */

@@ -30,6 +30,16 @@ class SupportTicketReplied extends Notification implements ShouldQueue
     }
 
     /**
+     * Lonceng panel diisi seketika; hanya emailnya yang menunggu giliran di queue.
+     *
+     * @return array<string, string>
+     */
+    public function viaConnections(): array
+    {
+        return ['database' => 'sync'];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toDatabase(object $notifiable): array
@@ -50,7 +60,7 @@ class SupportTicketReplied extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Balasan tiket: {$this->message->ticket->subject}")
+            ->subject("Tiket {$this->message->ticket->ticket_number}: {$this->message->ticket->subject}")
             ->greeting("Halo {$notifiable->name},")
             ->line($this->title().':')
             ->line($this->message->body)

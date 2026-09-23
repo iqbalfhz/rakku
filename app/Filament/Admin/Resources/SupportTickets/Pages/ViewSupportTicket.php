@@ -26,7 +26,7 @@ class ViewSupportTicket extends ViewRecord
         /** @var SupportTicket $ticket */
         $ticket = $this->getRecord();
 
-        return "{$ticket->user->name} · {$ticket->user->email} · {$ticket->status->getLabel()}";
+        return "{$ticket->ticket_number} · {$ticket->user->name} · {$ticket->user->email} · {$ticket->status->getLabel()}";
     }
 
     public function infolist(Schema $schema): Schema
