@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Pages;
 
 use App\Enums\SubscriptionPackage;
+use App\Support\PublicContact;
 use App\Support\SubscriptionConfig;
 use BackedEnum;
 use Filament\Forms\Components\TextInput;
@@ -12,21 +13,21 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
-class SubscriptionSettings extends Page
+class Settings extends Page
 {
-    protected string $view = 'filament.admin.pages.subscription-settings';
+    protected string $view = 'filament.admin.pages.settings';
 
-    protected static ?string $slug = 'pengaturan-langganan';
+    protected static ?string $slug = 'pengaturan';
 
-    protected static ?string $title = 'Pengaturan Langganan';
+    protected static ?string $title = 'Pengaturan';
 
-    protected static ?string $navigationLabel = 'Pengaturan Langganan';
+    protected static ?string $navigationLabel = 'Pengaturan';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
     protected static string|BackedEnum|null $activeNavigationIcon = Heroicon::Cog6Tooth;
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     /**
      * @var array<string, mixed>|null
@@ -38,6 +39,7 @@ class SubscriptionSettings extends Page
         $this->form->fill([
             'bank' => SubscriptionConfig::bank(),
             'prices' => SubscriptionConfig::prices(),
+            'contact' => PublicContact::all(),
         ]);
     }
 
@@ -74,6 +76,21 @@ class SubscriptionSettings extends Page
                             ->required(),
                         SubscriptionPackage::cases(),
                     )),
+                Section::make('Kontak publik')
+                    ->description('Dipajang di halaman depan untuk calon pengguna yang belum bisa membuka tiket bantuan. Kosongkan kalau tidak ingin ditampilkan.')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('contact.whatsapp')
+                            ->label('Nomor WhatsApp')
+                            ->placeholder('0812 3456 7890')
+                            ->tel()
+                            ->maxLength(20),
+                        TextInput::make('contact.email')
+                            ->label('Email')
+                            ->placeholder('halo@rakku.test')
+                            ->email()
+                            ->maxLength(100),
+                    ]),
             ])
             ->statePath('data');
     }
@@ -83,10 +100,11 @@ class SubscriptionSettings extends Page
         $data = $this->form->getState();
 
         SubscriptionConfig::save($data['bank'], $data['prices']);
+        PublicContact::save($data['contact']);
 
         Notification::make()
             ->success()
-            ->title('Pengaturan langganan tersimpan')
+            ->title('Pengaturan tersimpan')
             ->send();
     }
 }

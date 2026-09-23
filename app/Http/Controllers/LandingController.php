@@ -25,6 +25,7 @@ class LandingController extends Controller
             'features' => $this->features(),
             'steps' => $this->steps(),
             'promises' => $this->promises(),
+            'questions' => $this->questions(),
             'ledgerRows' => $this->ledgerRows(),
             'ledgerBalance' => Rupiah::format(4_905_000),
         ]);
@@ -57,12 +58,15 @@ class LandingController extends Controller
             ['name' => 'Banyak akun dan dompet, lengkap dengan transfer', 'isFree' => true],
             ['name' => 'Laporan cash flow bulanan dan tahunan', 'isFree' => true],
             ['name' => 'Budget per kategori', 'isFree' => true],
+            ['name' => 'Insight pengeluaran terbesar', 'isFree' => true],
             ['name' => 'Export data ke CSV', 'isFree' => true],
             ['name' => 'Utang-piutang + pengingat jatuh tempo', 'isFree' => false],
             ['name' => 'Invoice ke klien + PDF siap kirim', 'isFree' => false],
             ['name' => 'Laporan laba-rugi', 'isFree' => false],
             ['name' => 'Transaksi berulang otomatis', 'isFree' => false],
             ['name' => 'Peringatan saat budget hampir habis', 'isFree' => false],
+            ['name' => 'Insight tren & perbandingan antar bulan', 'isFree' => false],
+            ['name' => 'Export Excel format lengkap', 'isFree' => false],
             ['name' => 'Buku kedua dan seterusnya', 'isFree' => false],
         ];
     }
@@ -105,6 +109,39 @@ class LandingController extends Controller
             [
                 'title' => 'Catatan tetap milik Anda',
                 'body' => 'Semua data bisa diekspor kapan saja, dan tetap bisa dibuka meski premium tidak diperpanjang.',
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{question: string, answer: string}>
+     */
+    private function questions(): array
+    {
+        return [
+            [
+                'question' => 'Kalau premium berakhir, data saya hilang?',
+                'answer' => 'Tidak. Semua catatan, foto struk, dan invoice Anda tetap tersimpan dan tetap bisa dibuka. Yang terkunci hanya fitur premiumnya, dan terbuka lagi begitu diperpanjang.',
+            ],
+            [
+                'question' => 'Bagaimana cara membayarnya?',
+                'answer' => 'Transfer ke rekening yang tertera di halaman Langganan, lalu unggah bukti transfernya. Kami periksa secara manual, biasanya tidak lama, dan premium menyala setelah disetujui.',
+            ],
+            [
+                'question' => 'Apakah langganannya otomatis memperpanjang?',
+                'answer' => 'Tidak. Tidak ada tagihan berulang dan tidak ada kartu yang disimpan. Premium berhenti sendiri saat masa aktifnya habis, dan Anda kami ingatkan seminggu sebelumnya.',
+            ],
+            [
+                'question' => 'Apakah RakKu menyimpan uang saya?',
+                'answer' => 'Tidak. RakKu hanya mencatat angka yang mencerminkan uang sungguhan di kas dan rekening Anda. Tidak ada uang yang masuk atau keluar lewat aplikasi ini.',
+            ],
+            [
+                'question' => 'Bisa dipakai untuk usaha dan keuangan pribadi sekaligus?',
+                'answer' => 'Bisa. Satu akun boleh punya beberapa buku yang angkanya terpisah, misalnya "Pribadi" dan nama usaha Anda. Buku pertama gratis, buku kedua dan seterusnya ikut premium.',
+            ],
+            [
+                'question' => 'Data saya bisa dibawa keluar?',
+                'answer' => 'Bisa kapan saja. Transaksi dapat diekspor ke CSV, dan pengguna premium mendapat format Excel yang lebih lengkap.',
             ],
         ];
     }

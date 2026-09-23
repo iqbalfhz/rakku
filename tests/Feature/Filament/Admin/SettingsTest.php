@@ -1,12 +1,14 @@
 <?php
 
 use App\Enums\SubscriptionPackage;
-use App\Filament\Admin\Pages\SubscriptionSettings;
+use App\Filament\Admin\Pages\Settings;
 use App\Filament\App\Pages\Subscription;
 use App\Models\SubscriptionPayment;
 use App\Models\User;
+use App\Support\PublicContact;
 use App\Support\SubscriptionConfig;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -20,7 +22,7 @@ it('falls back to the config file while nothing has been saved', function () {
 });
 
 it('saves the bank account and package prices from the admin panel', function () {
-    Livewire::test(SubscriptionSettings::class)
+    Livewire::test(Settings::class)
         ->fillForm([
             'bank' => [
                 'name' => 'Bank Mandiri',
@@ -35,7 +37,7 @@ it('saves the bank account and package prices from the admin panel', function ()
         ])
         ->call('save')
         ->assertHasNoFormErrors()
-        ->assertNotified('Pengaturan langganan tersimpan');
+        ->assertNotified('Pengaturan tersimpan');
 
     expect(SubscriptionConfig::bank())->toBe([
         'name' => 'Bank Mandiri',
@@ -45,8 +47,38 @@ it('saves the bank account and package prices from the admin panel', function ()
         ->and(SubscriptionPackage::Yearly->price())->toBe(300_000);
 });
 
+it('saves the public contact shown on the landing page', function () {
+    Livewire::test(Settings::class)
+        ->fillForm([
+            'contact' => [
+                'whatsapp' => '0812 3456 7890',
+                'email' => 'halo@rakku.test',
+            ],
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(PublicContact::whatsAppNumber())->toBe('0812 3456 7890')
+        ->and(PublicContact::email())->toBe('halo@rakku.test')
+        ->and(PublicContact::whatsAppUrl())->toStartWith('https://wa.me/6281234567890');
+
+    Auth::logout();
+
+    $this->get('/')
+        ->assertSee('0812 3456 7890')
+        ->assertSee('halo@rakku.test');
+});
+
+it('leaves the contact out of the landing page while it is empty', function () {
+    Auth::logout();
+
+    $this->get('/')
+        ->assertSuccessful()
+        ->assertDontSee('wa.me', escape: false);
+});
+
 it('requires the bank account to stay filled in', function () {
-    Livewire::test(SubscriptionSettings::class)
+    Livewire::test(Settings::class)
         ->fillForm(['bank' => ['name' => '', 'account_number' => '', 'account_holder' => '']])
         ->call('save')
         ->assertHasFormErrors([
@@ -81,6 +113,6 @@ it('keeps the price that applied when a payment was submitted', function () {
 
 it('keeps non-admin users out of the settings page', function () {
     $this->actingAs(User::factory()->create())
-        ->get(SubscriptionSettings::getUrl())
+        ->get(Settings::getUrl())
         ->assertForbidden();
 });
