@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Account;
 use App\Services\TokenStore;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
@@ -21,6 +22,50 @@ function fakeLoginResponse(?array $books = null): void
         ]),
     ]);
 }
+
+it('pulls the book right after signing in so the home screen is not empty', function () {
+    Http::fake([
+        '*/api/v1/login' => Http::response([
+            'token' => 'token-rahasia',
+            'user' => ['name' => 'Budi', 'email' => 'budi@rakku.test'],
+            'books' => [['public_id' => '01m3buku', 'name' => 'Warung Kopi', 'is_default' => true]],
+        ]),
+        '*/api/v1/books/*/sync*' => Http::response([
+            'server_time' => '2026-10-01T03:00:00Z',
+            'accounts' => [['public_id' => '01m3kas', 'name' => 'Kas Laci', 'type' => 'cash', 'current_balance' => 90000]],
+            'categories' => [],
+            'transactions' => [],
+        ]),
+    ]);
+
+    Livewire::test('login')
+        ->set('email', 'budi@rakku.test')
+        ->set('password', 'rahasia-123')
+        ->call('submit')
+        ->assertRedirect(route('home'));
+
+    expect(Account::query()->sole()->name)->toBe('Kas Laci')
+        ->and(app(TokenStore::class)->lastSyncedAt())->toBe('2026-10-01T03:00:00Z');
+});
+
+it('still lets the user in when that first pull fails', function () {
+    Http::fake([
+        '*/api/v1/login' => Http::response([
+            'token' => 'token-rahasia',
+            'user' => ['name' => 'Budi', 'email' => 'budi@rakku.test'],
+            'books' => [['public_id' => '01m3buku', 'name' => 'Warung Kopi', 'is_default' => true]],
+        ]),
+        '*/api/v1/books/*/sync*' => Http::response('', 500),
+    ]);
+
+    Livewire::test('login')
+        ->set('email', 'budi@rakku.test')
+        ->set('password', 'rahasia-123')
+        ->call('submit')
+        ->assertRedirect(route('home'));
+
+    expect(app(TokenStore::class)->isSignedIn())->toBeTrue();
+});
 
 it('remembers the session and the default book after signing in', function () {
     fakeLoginResponse([

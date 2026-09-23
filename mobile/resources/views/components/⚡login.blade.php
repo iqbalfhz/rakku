@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\ApiClient;
+use App\Services\SyncEngine;
 use App\Services\TokenStore;
 use Livewire\Component;
 
@@ -44,7 +45,22 @@ new class extends Component
 
         $tokenStore->rememberBook($book['public_id'], $book['name']);
 
+        $this->pullFirstTime();
+
         $this->redirect(route('home'));
+    }
+
+    /**
+     * Tarikan pertama dijalankan di sini supaya beranda tidak tampil kosong.
+     * Kalau gagal, pengguna tetap masuk dan bisa menyinkronkan sendiri nanti.
+     */
+    private function pullFirstTime(): void
+    {
+        try {
+            app(SyncEngine::class)->pull();
+        } catch (\Throwable) {
+            // Sinyal buruk saat masuk bukan alasan untuk menahan pengguna di layar ini.
+        }
     }
 
     private function deviceName(): string
