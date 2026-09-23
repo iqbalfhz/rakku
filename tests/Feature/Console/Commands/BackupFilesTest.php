@@ -2,6 +2,7 @@
 
 use App\Console\Commands\BackupFiles;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->source = storage_path('framework/testing/uploads');
@@ -67,6 +68,49 @@ it('fails loudly when the source folder is missing', function () {
     $this->artisan('app:backup-files')
         ->expectsOutputToContain('tidak ada')
         ->assertFailed();
+});
+
+it('mirrors the archive to off-site storage when one is configured', function () {
+    Storage::fake('s3');
+    config(['backup.offsite_disk' => 's3', 'backup.offsite_directory' => 'rakku-files']);
+    File::put($this->source.'/receipts/struk.jpg', 'isi foto struk');
+
+    $this->artisan('app:backup-files')
+        ->expectsOutputToContain('Salinan terkirim ke s3')
+        ->assertSuccessful();
+
+    $copies = Storage::disk('s3')->files('rakku-files');
+
+    expect($copies)->toHaveCount(1)
+        ->and(basename($copies[0]))->toStartWith(BackupFiles::ARCHIVE_PREFIX);
+});
+
+it('prunes off-site copies with the same retention limit', function () {
+    Storage::fake('s3');
+    config(['backup.offsite_disk' => 's3', 'backup.offsite_directory' => 'rakku-files']);
+    File::put($this->source.'/receipts/struk.jpg', 'isi foto struk');
+
+    collect(['2026-09-01-020000', '2026-09-02-020000'])->each(
+        fn (string $timestamp) => Storage::disk('s3')->put('rakku-files/'.BackupFiles::ARCHIVE_PREFIX."{$timestamp}.zip", 'arsip lama'),
+    );
+
+    $this->artisan('app:backup-files', ['--keep' => 2])
+        ->expectsOutputToContain('1 salinan lama dihapus')
+        ->assertSuccessful();
+
+    expect(Storage::disk('s3')->files('rakku-files'))->toHaveCount(2)
+        ->and(Storage::disk('s3')->exists('rakku-files/'.BackupFiles::ARCHIVE_PREFIX.'2026-09-01-020000.zip'))->toBeFalse();
+});
+
+it('keeps the local archive even when the off-site copy fails', function () {
+    config(['backup.offsite_disk' => 'disk-yang-tidak-ada']);
+    File::put($this->source.'/receipts/struk.jpg', 'isi foto struk');
+
+    $this->artisan('app:backup-files')
+        ->expectsOutputToContain('Arsip lokal selamat')
+        ->assertFailed();
+
+    expect(File::glob($this->destination.'/*.zip'))->toHaveCount(1);
 });
 
 it('deletes the oldest archives beyond the retention limit', function () {

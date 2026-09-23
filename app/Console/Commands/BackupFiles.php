@@ -6,9 +6,11 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use Throwable;
 use ZipArchive;
 
 #[Signature('app:backup-files {--keep= : Jumlah arsip terakhir yang disimpan}')]
@@ -61,7 +63,57 @@ class BackupFiles extends Command
             $deletedCount > 0 ? " {$deletedCount} arsip lama dihapus." : '',
         ));
 
+        return $this->copyOffsite($archive);
+    }
+
+    /**
+     * Salin arsip ke penyimpanan di luar server, kalau memang disetel.
+     * Kegagalan di sini tidak membatalkan arsip lokal yang sudah jadi.
+     */
+    private function copyOffsite(string $archive): int
+    {
+        $disk = config('backup.offsite_disk');
+
+        if ($disk === null) {
+            return self::SUCCESS;
+        }
+
+        $remotePath = trim((string) config('backup.offsite_directory'), '/').'/'.basename($archive);
+
+        try {
+            $stream = fopen($archive, 'rb');
+            Storage::disk($disk)->writeStream($remotePath, $stream);
+            fclose($stream);
+        } catch (Throwable $exception) {
+            $this->error("Arsip lokal selamat, tapi salinan ke {$disk} gagal: {$exception->getMessage()}");
+
+            return self::FAILURE;
+        }
+
+        $prunedCount = $this->pruneOffsiteArchives($disk);
+
+        $this->info("Salinan terkirim ke {$disk}:{$remotePath}.".($prunedCount > 0 ? " {$prunedCount} salinan lama dihapus." : ''));
+
         return self::SUCCESS;
+    }
+
+    /**
+     * Retensi di penyimpanan luar mengikuti batas yang sama dengan arsip lokal.
+     */
+    private function pruneOffsiteArchives(string $disk): int
+    {
+        $keep = max(1, (int) ($this->option('keep') ?? config('backup.keep')));
+        $directory = trim((string) config('backup.offsite_directory'), '/');
+
+        $obsolete = collect(Storage::disk($disk)->files($directory))
+            ->filter(fn (string $path): bool => str_starts_with(basename($path), self::ARCHIVE_PREFIX))
+            ->sortDesc()
+            ->values()
+            ->slice($keep);
+
+        Storage::disk($disk)->delete($obsolete->all());
+
+        return $obsolete->count();
     }
 
     /**

@@ -49,4 +49,18 @@ return [
 
     'keep' => (int) (env('BACKUP_FILES_KEEP') ?: 14),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Salinan di Luar Server
+    |--------------------------------------------------------------------------
+    |
+    | Nama disk tujuan salinan arsip, mis. "s3". Dibiarkan kosong berarti arsip
+    | hanya ada di server ini, dan ikut hilang kalau servernya hilang.
+    |
+    */
+
+    'offsite_disk' => env('BACKUP_OFFSITE_DISK') ?: null,
+
+    'offsite_directory' => env('BACKUP_OFFSITE_DIRECTORY') ?: 'rakku-files',
+
 ];
