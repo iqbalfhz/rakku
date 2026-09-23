@@ -5,6 +5,7 @@ namespace App\Filament\App\Pages;
 use App\Filament\App\Widgets\BalanceOverview;
 use App\Filament\App\Widgets\CashFlowTrendChart;
 use App\Filament\App\Widgets\CategoryComparisonChart;
+use App\Filament\App\Widgets\GettingStarted;
 use App\Filament\App\Widgets\MonthOverMonthOverview;
 use App\Filament\App\Widgets\TopExpenseCategoriesChart;
 use BackedEnum;
@@ -22,6 +23,7 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
+            GettingStarted::class,
             BalanceOverview::class,
             CashFlowTrendChart::class,
             TopExpenseCategoriesChart::class,

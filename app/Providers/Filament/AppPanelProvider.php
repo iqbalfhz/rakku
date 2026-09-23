@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\App\Pages\Auth\EditProfile;
 use App\Filament\App\Pages\Tenancy\EditBookProfile;
 use App\Filament\App\Pages\Tenancy\RegisterBook;
 use App\Models\Book;
@@ -37,7 +38,7 @@ class AppPanelProvider extends PanelProvider
             ->registration()
             ->emailVerification()
             ->passwordReset()
-            ->profile()
+            ->profile(EditProfile::class)
             ->colors([
                 'primary' => Color::Emerald,
             ])
