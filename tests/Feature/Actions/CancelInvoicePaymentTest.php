@@ -16,7 +16,7 @@ it('removes the income transaction and returns the invoice to sent', function ()
 
     app(CancelInvoicePayment::class)->handle($invoice->fresh());
 
-    $this->assertModelMissing($transaction);
+    $this->assertSoftDeleted($transaction);
     expect($invoice->fresh())
         ->status->toBe(InvoiceStatus::Sent)
         ->transaction_id->toBeNull()

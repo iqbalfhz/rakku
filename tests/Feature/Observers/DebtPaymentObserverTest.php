@@ -51,7 +51,7 @@ it('removes the generated transaction and reopens the debt when an installment i
 
     $payment->delete();
 
-    $this->assertModelMissing($transaction);
+    $this->assertSoftDeleted($transaction);
     expect($debt->fresh())
         ->remaining_amount->toBe('100000.00')
         ->status->toBe(DebtStatus::Unpaid)
