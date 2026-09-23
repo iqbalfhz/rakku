@@ -2,19 +2,20 @@
 
 namespace App\Support;
 
-use Illuminate\Support\Number;
-
 /**
- * Format rupiah yang sama dengan aplikasi web: tanpa angka di belakang koma.
+ * Format rupiah untuk aplikasi ponsel.
+ *
+ * Ditulis manual, bukan lewat Number::currency(), karena PHP yang ditanam
+ * NativePHP ke dalam ponsel tidak membawa ekstensi intl.
  */
 final class Rupiah
 {
-    public const string CURRENCY = 'IDR';
+    private const string THOUSANDS_SEPARATOR = '.';
 
-    public const int DECIMAL_PLACES = 0;
+    private const string DECIMAL_SEPARATOR = ',';
 
     public static function format(float|int $amount): string
     {
-        return Number::currency($amount, self::CURRENCY, precision: self::DECIMAL_PLACES);
+        return 'Rp '.number_format($amount, 0, self::DECIMAL_SEPARATOR, self::THOUSANDS_SEPARATOR);
     }
 }
