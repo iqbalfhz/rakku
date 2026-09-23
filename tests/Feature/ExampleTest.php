@@ -1,7 +1,7 @@
 <?php
 
-test('the application redirects the home page to the app panel', function () {
+test('the application serves the landing page at the root', function () {
     $response = $this->get('/');
 
-    $response->assertRedirect('/app');
+    $response->assertSuccessful();
 });

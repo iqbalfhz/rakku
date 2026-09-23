@@ -1,9 +1,10 @@
 <?php
 
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\SharedInvoicePdfController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/app');
+Route::get('/', LandingController::class)->name('landing');
 
 Route::get('invoices/{invoice}/pdf', SharedInvoicePdfController::class)
     ->middleware('signed')

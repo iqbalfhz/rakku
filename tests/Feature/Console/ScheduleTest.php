@@ -13,6 +13,7 @@ it('schedules the daily jobs and processes the queue every minute', function () 
         'app:generate-recurring-transactions' => '5 0 * * *',
         'app:mark-overdue-invoices' => '10 0 * * *',
         'app:send-debt-reminders' => '0 8 * * *',
+        'app:send-premium-expiry-reminders' => '10 8 * * *',
         'app:backup-files' => '30 2 * * *',
         'app:prune-exports' => '0 3 * * *',
         'app:report-failed-jobs' => '0 7 * * *',

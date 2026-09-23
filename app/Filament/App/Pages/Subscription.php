@@ -219,6 +219,16 @@ class Subscription extends Page
         return auth()->user();
     }
 
+    /**
+     * Tautan ke halaman ini untuk dipakai di notifikasi, lewat buku pertama milik pengguna.
+     */
+    public static function urlFor(User $user): string
+    {
+        $book = $user->books()->oldest('id')->first();
+
+        return $book === null ? url('/app') : static::getUrl(panel: 'app', tenant: $book);
+    }
+
     private function notifyAdmins(SubscriptionPayment $payment): void
     {
         $admins = User::query()->where('is_admin', true)->get();

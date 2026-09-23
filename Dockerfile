@@ -5,6 +5,18 @@
 # sedangkan TLS diselesaikan Cloudflare Tunnel di depannya. Scheduler (termasuk
 # pemrosesan queue) dijalankan lewat Scheduled Task Coolify, bukan proses di sini.
 
+# Halaman depan memakai Tailwind + font lokal, jadi asetnya dibangun dulu di stage terpisah.
+FROM node:22-alpine AS assets
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY vite.config.js ./
+COPY resources ./resources
+RUN npm run build
+
 FROM dunglas/frankenphp:php8.4-bookworm
 
 # intl diminta Filament, zip untuk export XLSX, pcntl agar batas waktu job queue berlaku.
@@ -31,6 +43,7 @@ RUN composer install \
 
 # dump-autoload juga menjalankan filament:upgrade yang menerbitkan aset CSS/JS Filament ke public/.
 COPY . .
+COPY --from=assets /app/public/build ./public/build
 RUN composer dump-autoload --no-dev --optimize --classmap-authoritative
 
 COPY docker/Caddyfile /etc/frankenphp/Caddyfile

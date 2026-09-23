@@ -6,6 +6,7 @@ use App\Console\Commands\MarkOverdueInvoices;
 use App\Console\Commands\PruneExports;
 use App\Console\Commands\ReportFailedJobs;
 use App\Console\Commands\SendDebtReminders;
+use App\Console\Commands\SendPremiumExpiryReminders;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -17,6 +18,7 @@ Artisan::command('inspire', function () {
 Schedule::command(GenerateRecurringTransactions::class)->dailyAt('00:05')->withoutOverlapping();
 Schedule::command(MarkOverdueInvoices::class)->dailyAt('00:10');
 Schedule::command(SendDebtReminders::class)->dailyAt('08:00');
+Schedule::command(SendPremiumExpiryReminders::class)->dailyAt('08:10');
 
 // Backup database diurus Coolify; ini menyalin file unggahan yang tidak ikut di dalamnya.
 Schedule::command(BackupFiles::class)->dailyAt('02:30')->withoutOverlapping();
