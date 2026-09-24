@@ -78,6 +78,28 @@ class ApiClient
     }
 
     /**
+     * Hapus akun beserta seluruh isinya. Tidak bisa dibatalkan, dan tidak bisa
+     * dikerjakan offline: yang menghapus adalah server.
+     *
+     * @throws RuntimeException saat pengesahan ditolak atau server tidak terjangkau
+     */
+    public function deleteAccount(string $email, string $password): void
+    {
+        $response = $this->authenticated()->delete('account', ['email' => $email, 'password' => $password]);
+
+        if ($response->status() === 422) {
+            throw new RuntimeException(
+                collect($response->json('errors', []))->flatten()->first()
+                    ?? 'Email atau kata sandi tidak cocok.',
+            );
+        }
+
+        if ($response->failed()) {
+            throw new RuntimeException('Penghapusan gagal. Coba lagi saat sinyal membaik.');
+        }
+    }
+
+    /**
      * Kirim kabar kerusakan yang menumpuk di ponsel.
      *
      * @param  list<array<string, mixed>>  $reports

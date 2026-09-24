@@ -19,6 +19,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\RecurringTransaction;
 use App\Models\Transaction;
+use App\Models\Transfer;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -56,6 +57,7 @@ class LedgerSync
             'accounts' => $book->accounts()->get()->map($this->accountPayload(...))->all(),
             'categories' => $book->categories()->get()->map($this->categoryPayload(...))->all(),
             'transactions' => $this->changedTransactions($book, $since)->map($this->transactionPayload(...))->all(),
+            'transfers' => $this->changedTransfers($book, $since)->map($this->transferPayload(...))->all(),
             'budgets' => $book->budgets()->with('category')->get()->map($this->budgetPayload(...))->all(),
             'debts' => $debts->map($this->debtPayload(...))->all(),
             'debt_payments' => $this->changedPayments($book, $since, $debts)->map($this->paymentPayload(...))->all(),
@@ -81,6 +83,7 @@ class LedgerSync
      * @param  list<array<string, mixed>>  $recurringTransactions
      * @param  list<array<string, mixed>>  $accounts
      * @param  list<array<string, mixed>>  $categories
+     * @param  list<array<string, mixed>>  $transfers
      * @return array{applied: int, skipped: int}
      */
     public function push(
@@ -95,13 +98,14 @@ class LedgerSync
         array $recurringTransactions = [],
         array $accounts = [],
         array $categories = [],
+        array $transfers = [],
     ): array {
         $applied = 0;
         $skipped = 0;
 
         $isPremium = $book->user->isPremium();
 
-        DB::transaction(function () use ($book, $transactions, $debts, $debtPayments, $budgets, $invoices, $invoicePayments, $clients, $recurringTransactions, $accounts, $categories, $isPremium, &$applied, &$skipped): void {
+        DB::transaction(function () use ($book, $transactions, $debts, $debtPayments, $budgets, $invoices, $invoicePayments, $clients, $recurringTransactions, $accounts, $categories, $transfers, $isPremium, &$applied, &$skipped): void {
             // Akun dan kategori didahulukan: transaksi yang menyusul mungkin menunjuk ke yang baru dibuat.
             foreach ($accounts as $payload) {
                 $this->applyIncomingAccount($book, $payload) ? $applied++ : $skipped++;
@@ -113,6 +117,10 @@ class LedgerSync
 
             foreach ($transactions as $payload) {
                 $this->applyIncoming($book, $payload) ? $applied++ : $skipped++;
+            }
+
+            foreach ($transfers as $payload) {
+                $this->applyIncomingTransfer($book, $payload) ? $applied++ : $skipped++;
             }
 
             // Anggaran terbuka untuk semua; hanya peringatannya yang premium.
@@ -171,6 +179,77 @@ class LedgerSync
                 fn (Builder $query) => $query->where('updated_at', '>', $this->localised($since)),
             )
             ->get();
+    }
+
+    /**
+     * @return Collection<int, Transfer>
+     */
+    private function changedTransfers(Book $book, ?CarbonImmutable $since): Collection
+    {
+        return $book->transfers()
+            ->withTrashed()
+            ->with(['fromAccount', 'toAccount'])
+            ->when(
+                $since === null,
+                fn (Builder $query) => $query->whereNull('deleted_at')
+                    ->where('transfer_date', '>=', today()->subMonths(self::INITIAL_MONTHS)),
+                fn (Builder $query) => $query->where('updated_at', '>', $this->localised($since)),
+            )
+            ->get();
+    }
+
+    /**
+     * Pemindahan uang antar akun. Bukan pemasukan dan bukan pengeluaran, jadi ia
+     * punya tabelnya sendiri supaya tidak ikut mengotori laporan laba-rugi.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function applyIncomingTransfer(Book $book, array $payload): bool
+    {
+        $existing = $book->transfers()->withTrashed()->where('public_id', $payload['public_id'])->first();
+
+        if ($existing?->trashed()) {
+            return false;
+        }
+
+        $incomingUpdatedAt = CarbonImmutable::parse($payload['updated_at']);
+
+        if ($existing !== null && $existing->updated_at->greaterThanOrEqualTo($incomingUpdatedAt)) {
+            return false;
+        }
+
+        if ($payload['is_deleted'] ?? false) {
+            $existing?->delete();
+
+            return $existing !== null;
+        }
+
+        $fromAccount = $book->accounts()->where('public_id', $payload['from_account_public_id'])->first();
+        $toAccount = $book->accounts()->where('public_id', $payload['to_account_public_id'])->first();
+
+        if ($fromAccount === null || $toAccount === null || $fromAccount->is($toAccount)) {
+            return false;
+        }
+
+        $attributes = [
+            'from_account_id' => $fromAccount->id,
+            'to_account_id' => $toAccount->id,
+            'amount' => $payload['amount'],
+            'description' => $payload['description'] ?? null,
+            'transfer_date' => $payload['transfer_date'],
+        ];
+
+        if ($existing === null) {
+            $transfer = $book->transfers()->make($attributes);
+            $transfer->public_id = $payload['public_id'];
+            $transfer->save();
+
+            return true;
+        }
+
+        $existing->fill($attributes)->save();
+
+        return true;
     }
 
     /**
@@ -798,6 +877,23 @@ class LedgerSync
             'has_receipt' => $transaction->receipt_photo_path !== null,
             'is_deleted' => $transaction->trashed(),
             'updated_at' => $transaction->updated_at->utc()->toIso8601ZuluString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function transferPayload(Transfer $transfer): array
+    {
+        return [
+            'public_id' => $transfer->public_id,
+            'from_account_public_id' => $transfer->fromAccount?->public_id,
+            'to_account_public_id' => $transfer->toAccount?->public_id,
+            'amount' => (float) $transfer->amount,
+            'description' => $transfer->description,
+            'transfer_date' => $transfer->transfer_date->toDateString(),
+            'is_deleted' => $transfer->trashed(),
+            'updated_at' => $transfer->updated_at->utc()->toIso8601ZuluString(),
         ];
     }
 

@@ -19,6 +19,8 @@ Route::middleware(RequireSignedIn::class)->group(function () {
     Route::get('/catat/{publicId?}', fn (?string $publicId = null) => view('pages.record', ['publicId' => $publicId]))
         ->name('record');
 
+    Route::view('/akun', 'pages.account')->name('account');
+    Route::view('/pindah', 'pages.transfers')->name('transfers');
     Route::view('/pengaturan', 'pages.setup')->name('setup');
     Route::view('/langganan', 'pages.subscription')->name('subscription');
     Route::view('/laporan', 'pages.report')->name('report');

@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\RecurringTransaction;
 use App\Models\Transaction;
+use App\Models\Transfer;
 
 /**
  * Berapa banyak yang ditulis di ponsel tapi belum sampai ke server.
@@ -27,6 +28,7 @@ class PendingChanges
         return Account::query()->pending()->count()
             + Category::query()->pending()->count()
             + Transaction::query()->pending()->count()
+            + Transfer::query()->pending()->count()
             + Debt::query()->pending()->count()
             + DebtPayment::query()->pending()->count()
             + Budget::query()->pending()->count()

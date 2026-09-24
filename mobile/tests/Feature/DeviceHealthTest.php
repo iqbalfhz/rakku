@@ -171,3 +171,13 @@ it('sends the reports along with the usual sync', function () {
 
     expect(DeviceReport::query()->count())->toBe(0);
 });
+
+it('says which version of the app was running when it broke', function () {
+    Http::fake(['*/api/v1/device-reports' => Http::response(['received' => 1])]);
+    config(['nativephp.version' => '1.4.0']);
+
+    app(DiagnosticsReporter::class)->report(DiagnosticsReporter::CRASH, 'Sesuatu meledak');
+    app(DiagnosticsReporter::class)->flush();
+
+    Http::assertSent(fn ($request): bool => ($request['reports'][0]['context']['app_version'] ?? null) === '1.4.0');
+});

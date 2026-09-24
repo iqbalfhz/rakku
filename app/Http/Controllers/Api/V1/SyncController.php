@@ -119,6 +119,15 @@ class SyncController extends Controller
             'categories.*.type' => ['required', 'in:income,expense'],
             'categories.*.is_deleted' => ['boolean'],
             'categories.*.updated_at' => ['required', 'date'],
+            'transfers' => ['sometimes', 'array'],
+            'transfers.*.public_id' => ['required', 'ulid'],
+            'transfers.*.from_account_public_id' => ['required', 'ulid'],
+            'transfers.*.to_account_public_id' => ['required', 'ulid', 'different:transfers.*.from_account_public_id'],
+            'transfers.*.amount' => ['required', 'numeric', 'min:1'],
+            'transfers.*.description' => ['nullable', 'string', 'max:255'],
+            'transfers.*.transfer_date' => ['required', 'date'],
+            'transfers.*.is_deleted' => ['boolean'],
+            'transfers.*.updated_at' => ['required', 'date'],
         ]);
 
         $result = $this->ledgerSync->push(
@@ -133,6 +142,7 @@ class SyncController extends Controller
             $data['recurring_transactions'] ?? [],
             $data['accounts'] ?? [],
             $data['categories'] ?? [],
+            $data['transfers'] ?? [],
         );
 
         return response()->json($result + ['server_time' => now()->utc()->toIso8601ZuluString()]);

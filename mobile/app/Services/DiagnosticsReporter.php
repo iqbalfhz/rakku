@@ -115,7 +115,9 @@ class DiagnosticsReporter
 
         return [
             'platform' => $platform,
-            'app_version' => (string) config('app.version', 'dev'),
+            // Versi yang dipasang NativePHP ke APK, bukan config bawaan Laravel yang
+            // tidak pernah diisi — tanpa ini setiap laporan mengaku "dev".
+            'app_version' => (string) config('nativephp.version', 'dev'),
             'php_version' => PHP_VERSION,
         ];
     }

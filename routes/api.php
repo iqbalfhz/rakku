@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\BookController;
 use App\Http\Controllers\Api\V1\DeviceReportController;
 use App\Http\Controllers\Api\V1\InvoiceShareController;
@@ -49,6 +50,10 @@ Route::prefix('v1')->group(function () {
         Route::post('books', [BookController::class, 'store'])
             ->middleware('throttle:10,1')
             ->name('api.books.store');
+
+        Route::delete('account', [AccountController::class, 'destroy'])
+            ->middleware('throttle:5,1')
+            ->name('api.account.destroy');
 
         Route::post('subscription/payments', [SubscriptionController::class, 'store'])
             ->middleware('throttle:5,1')

@@ -172,7 +172,7 @@ new class extends Component
     <section class="tape">
         <p class="tape__label">Buka juga</p>
 
-        @foreach ([['setup', 'Akun & kategori', 'Tempat uang disimpan dan cara mengelompokkannya'], ['report', 'Laporan', 'Arus kas dan laba-rugi per bulan'], ['budgets', 'Anggaran', 'Jatah belanja per kategori'], ['invoices', 'Invoice', 'Tagihan untuk klien'], ['recurring', 'Transaksi berulang', 'Sewa, listrik, dan yang tiap bulan sama'], ['subscription', 'Langganan', 'Status premium dan perpanjangannya']] as [$route, $title, $note])
+        @foreach ([['transfers', 'Pindah uang', 'Antar akun sendiri, tanpa mengotori laporan'], ['setup', 'Akun & kategori', 'Tempat uang disimpan dan cara mengelompokkannya'], ['report', 'Laporan', 'Arus kas dan laba-rugi per bulan'], ['budgets', 'Anggaran', 'Jatah belanja per kategori'], ['invoices', 'Invoice', 'Tagihan untuk klien'], ['recurring', 'Transaksi berulang', 'Sewa, listrik, dan yang tiap bulan sama'], ['account', 'Akun saya', 'Langganan, buku, dan hapus akun']] as [$route, $title, $note])
             <a class="entry" href="{{ route($route) }}" wire:navigate style="color: inherit; text-decoration: none;">
                 <div class="entry__label">
                     <p class="entry__title">{{ $title }}</p>

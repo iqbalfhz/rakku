@@ -13,6 +13,7 @@ use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
 use App\Models\RecurringTransaction;
 use App\Models\Transaction;
+use App\Models\Transfer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -92,12 +93,14 @@ class SyncEngine
         $pendingRecurring = RecurringTransaction::query()->pending()->get();
         $pendingAccounts = Account::query()->pending()->get();
         $pendingCategories = Category::query()->pending()->get();
+        $pendingTransfers = Transfer::query()->pending()->get();
 
         $changes = [
             'accounts' => $pendingAccounts->map($this->outgoingAccountPayload(...))->all(),
             'categories' => $pendingCategories->map($this->outgoingCategoryPayload(...))->all(),
             'clients' => $pendingClients->map($this->outgoingClientPayload(...))->all(),
             'transactions' => $pending->map($this->outgoingPayload(...))->all(),
+            'transfers' => $pendingTransfers->map($this->outgoingTransferPayload(...))->all(),
             'debts' => $pendingDebts->map($this->outgoingDebtPayload(...))->all(),
             'debt_payments' => $pendingPayments->map($this->outgoingPaymentPayload(...))->all(),
             'budgets' => $pendingBudgets->map($this->outgoingBudgetPayload(...))->all(),
@@ -112,7 +115,7 @@ class SyncEngine
 
         $this->apiClient->push($this->bookPublicId(), $changes);
 
-        DB::transaction(function () use ($pending, $pendingDebts, $pendingPayments, $pendingBudgets, $pendingInvoices, $pendingInvoicePayments, $pendingClients, $pendingRecurring, $pendingAccounts, $pendingCategories): void {
+        DB::transaction(function () use ($pending, $pendingDebts, $pendingPayments, $pendingBudgets, $pendingInvoices, $pendingInvoicePayments, $pendingClients, $pendingRecurring, $pendingAccounts, $pendingCategories, $pendingTransfers): void {
             Client::query()->whereIn('id', $pendingClients->pluck('id'))->update(['is_dirty' => false]);
 
             Account::query()->whereIn('id', $pendingAccounts->where('is_deleted', true)->pluck('id'))->delete();
@@ -123,6 +126,9 @@ class SyncEngine
 
             Transaction::query()->whereIn('id', $pending->where('is_deleted', true)->pluck('id'))->delete();
             Transaction::query()->whereIn('id', $pending->where('is_deleted', false)->pluck('id'))->update(['is_dirty' => false]);
+
+            Transfer::query()->whereIn('id', $pendingTransfers->where('is_deleted', true)->pluck('id'))->delete();
+            Transfer::query()->whereIn('id', $pendingTransfers->where('is_deleted', false)->pluck('id'))->update(['is_dirty' => false]);
 
             Debt::query()->whereIn('id', $pendingDebts->where('is_deleted', true)->pluck('id'))->delete();
             Debt::query()->whereIn('id', $pendingDebts->where('is_deleted', false)->pluck('id'))->update(['is_dirty' => false]);
@@ -155,6 +161,7 @@ class SyncEngine
             $this->replaceAccounts($payload['accounts']);
             $this->replaceCategories($payload['categories']);
             $this->applyTransactions($payload['transactions']);
+            $this->applyTransfers($payload['transfers'] ?? []);
 
             // Server lama belum mengirim bagian ini; ponsel tidak boleh rusak karenanya.
             $this->replaceBudgets($payload['budgets'] ?? null);
@@ -305,6 +312,23 @@ class SyncEngine
             'type' => $category->type,
             'is_deleted' => $category->is_deleted,
             'updated_at' => $category->updated_at->utc()->toIso8601ZuluString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function outgoingTransferPayload(Transfer $transfer): array
+    {
+        return [
+            'public_id' => $transfer->public_id,
+            'from_account_public_id' => $transfer->from_account_public_id,
+            'to_account_public_id' => $transfer->to_account_public_id,
+            'amount' => (float) $transfer->amount,
+            'description' => $transfer->description,
+            'transfer_date' => $transfer->transfer_date->toDateString(),
+            'is_deleted' => $transfer->is_deleted,
+            'updated_at' => $transfer->updated_at->utc()->toIso8601ZuluString(),
         ];
     }
 
@@ -494,6 +518,40 @@ class SyncEngine
             ->where('is_dirty', false)
             ->whereNotIn('public_id', array_column($budgets, 'public_id'))
             ->delete();
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $transfers
+     */
+    private function applyTransfers(array $transfers): void
+    {
+        foreach ($transfers as $transfer) {
+            $local = Transfer::query()->where('public_id', $transfer['public_id'])->first();
+
+            if ($local?->is_dirty) {
+                continue;
+            }
+
+            if ($transfer['is_deleted'] ?? false) {
+                $local?->delete();
+
+                continue;
+            }
+
+            Transfer::query()->updateOrCreate(
+                ['public_id' => $transfer['public_id']],
+                [
+                    'from_account_public_id' => $transfer['from_account_public_id'],
+                    'to_account_public_id' => $transfer['to_account_public_id'],
+                    'amount' => $transfer['amount'],
+                    'description' => $transfer['description'],
+                    'transfer_date' => $transfer['transfer_date'],
+                    'server_updated_at' => $transfer['updated_at'],
+                    'is_dirty' => false,
+                    'is_deleted' => false,
+                ],
+            );
+        }
     }
 
     /**

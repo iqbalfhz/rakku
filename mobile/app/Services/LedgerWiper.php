@@ -14,6 +14,7 @@ use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
 use App\Models\RecurringTransaction;
 use App\Models\Transaction;
+use App\Models\Transfer;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -37,6 +38,7 @@ class LedgerWiper
             Client::query()->delete();
             RecurringTransaction::query()->delete();
             Budget::query()->delete();
+            Transfer::query()->delete();
             Transaction::query()->delete();
             Account::query()->delete();
             Category::query()->delete();
