@@ -38,8 +38,9 @@ new class extends Component
 
         $book = collect($session['books'])->firstWhere('is_default', true) ?? $session['books'][0] ?? null;
 
+        // Akun baru belum tentu punya buku; pengguna dibawa membuatnya, bukan disuruh ke web.
         if ($book === null) {
-            $this->error = 'Akun ini belum punya buku. Buat dulu lewat aplikasi web.';
+            $this->redirect(route('books'));
 
             return;
         }

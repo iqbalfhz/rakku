@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\BookController;
 use App\Http\Controllers\Api\V1\InvoiceShareController;
 use App\Http\Controllers\Api\V1\LoginController;
 use App\Http\Controllers\Api\V1\ReceiptController;
@@ -16,6 +17,9 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [LoginController::class, 'destroy'])->name('api.logout');
+
+        Route::get('books', [BookController::class, 'index'])->name('api.books.index');
+        Route::post('books', [BookController::class, 'store'])->name('api.books.store');
 
         Route::get('books/{book:public_id}/sync', [SyncController::class, 'show'])->name('api.sync.pull');
         Route::post('books/{book:public_id}/sync', [SyncController::class, 'store'])->name('api.sync.push');

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Book;
 use App\Models\User;
+use App\Support\BookList;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -36,11 +36,7 @@ class LoginController extends Controller
         return response()->json([
             'token' => $user->createToken($credentials['device_name'])->plainTextToken,
             'user' => ['name' => $user->name, 'email' => $user->email],
-            'books' => $user->books->map(fn (Book $book): array => [
-                'public_id' => $book->public_id,
-                'name' => $book->name,
-                'is_default' => (bool) $book->is_default,
-            ])->all(),
+            'books' => BookList::forUser($user),
         ]);
     }
 

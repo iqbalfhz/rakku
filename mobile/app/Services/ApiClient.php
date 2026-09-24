@@ -56,6 +56,28 @@ class ApiClient
     }
 
     /**
+     * Buku baru selalu butuh sinyal: identitasnya dibuat server, bukan ponsel.
+     *
+     * @return array{book: array{public_id: string, name: string, is_default: bool}, books: list<array{public_id: string, name: string, is_default: bool}>}
+     *
+     * @throws RuntimeException saat server menolak atau tidak terjangkau
+     */
+    public function createBook(string $name): array
+    {
+        $response = $this->authenticated()->post('books', ['name' => $name]);
+
+        if ($response->status() === 403) {
+            throw new RuntimeException($response->json('message') ?? 'Buku tambahan hanya untuk pelanggan premium.');
+        }
+
+        if ($response->failed()) {
+            throw new RuntimeException('Buku gagal dibuat. Coba lagi saat sinyal membaik.');
+        }
+
+        return $response->json();
+    }
+
+    /**
      * @param  array<string, list<array<string, mixed>>>  $changes
      * @return array{applied: int, skipped: int, server_time: string}
      */

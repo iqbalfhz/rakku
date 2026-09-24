@@ -13,12 +13,14 @@
     @livewireStyles
 </head>
 <body>
-    <main class="shell {{ app(TokenStore::class)->isSignedIn() ? 'shell--with-tabs' : '' }}">
+    @php ($hasOpenBook = app(TokenStore::class)->bookPublicId() !== null)
+
+    <main class="shell {{ $hasOpenBook ? 'shell--with-tabs' : '' }}">
         {{ $slot }}
     </main>
 
-    {{-- Tab kartu indeks: hanya muncul setelah pengguna masuk. --}}
-    @if (app(TokenStore::class)->isSignedIn())
+    {{-- Tab kartu indeks: muncul setelah ada buku yang dibuka, karena semua layarnya butuh itu. --}}
+    @if ($hasOpenBook)
         <nav class="tabs">
             <a class="tabs__tab {{ request()->routeIs('home') ? 'tabs__tab--on' : '' }}"
                href="{{ route('home') }}" wire:navigate>Beranda</a>
