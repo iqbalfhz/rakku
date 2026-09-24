@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\BookController;
 use App\Http\Controllers\Api\V1\InvoiceShareController;
 use App\Http\Controllers\Api\V1\LoginController;
 use App\Http\Controllers\Api\V1\ReceiptController;
+use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SyncController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,9 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [LoginController::class, 'destroy'])->name('api.logout');
+
+        Route::get('subscription', [SubscriptionController::class, 'show'])->name('api.subscription.show');
+        Route::post('subscription/payments', [SubscriptionController::class, 'store'])->name('api.subscription.store');
 
         Route::get('books', [BookController::class, 'index'])->name('api.books.index');
         Route::post('books', [BookController::class, 'store'])->name('api.books.store');

@@ -189,9 +189,7 @@ new class extends Component
         <section class="tape">
             <p class="tape__label">Fitur premium</p>
             <p class="entry__title" style="margin: 8px 0 0;">Transaksi berulang terbuka setelah langganan aktif.</p>
-            <p class="muted small" style="margin: 10px 0 0;">
-                Aktifkan lewat rakku.iqbalfhz.my.id, lalu sinkronkan dari Beranda supaya ponsel ikut tahu.
-            </p>
+            <a class="button" href="{{ route('subscription') }}" wire:navigate style="margin-top: 18px;">Aktifkan premium</a>
         </section>
 
         <a class="button button--quiet" href="{{ route('home') }}" wire:navigate style="margin-top: 16px;">Kembali</a>

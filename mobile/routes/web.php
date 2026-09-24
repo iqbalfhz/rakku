@@ -17,6 +17,7 @@ Route::middleware(RequireSignedIn::class)->group(function () {
         ->name('record');
 
     Route::view('/pengaturan', 'pages.setup')->name('setup');
+    Route::view('/langganan', 'pages.subscription')->name('subscription');
     Route::view('/laporan', 'pages.report')->name('report');
     Route::view('/anggaran', 'pages.budgets')->name('budgets');
     Route::view('/berulang', 'pages.recurring')->name('recurring');

@@ -78,6 +78,44 @@ class ApiClient
     }
 
     /**
+     * Harga, rekening tujuan, dan riwayat pengajuan premium.
+     *
+     * @return array<string, mixed>
+     */
+    public function subscription(): array
+    {
+        return $this->authenticated()->get('subscription')->throw()->json();
+    }
+
+    /**
+     * Kirim bukti transfer. Dipisah dari sinkronisasi karena bukan bagian dari buku kas.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws RuntimeException saat server menolak atau tidak terjangkau
+     */
+    public function submitPaymentProof(string $package, string $absolutePath, ?string $note): array
+    {
+        $response = $this->authenticated()
+            ->attach('proof', file_get_contents($absolutePath), basename($absolutePath))
+            ->post('subscription/payments', array_filter(['package' => $package, 'note' => $note]));
+
+        if ($response->status() === 409) {
+            throw new RuntimeException($response->json('message') ?? 'Masih ada pengajuan yang menunggu diverifikasi admin.');
+        }
+
+        if ($response->status() === 422) {
+            throw new RuntimeException($response->json('message') ?? 'Bukti transfer ditolak server.');
+        }
+
+        if ($response->failed()) {
+            throw new RuntimeException('Bukti gagal dikirim. Coba lagi saat sinyal membaik.');
+        }
+
+        return $response->json();
+    }
+
+    /**
      * @param  array<string, list<array<string, mixed>>>  $changes
      * @return array{applied: int, skipped: int, server_time: string}
      */

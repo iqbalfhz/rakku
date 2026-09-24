@@ -2,10 +2,10 @@
 
 namespace App\Filament\App\Pages;
 
+use App\Actions\SubmitSubscriptionPayment;
 use App\Enums\SubscriptionPackage;
 use App\Models\SubscriptionPayment;
 use App\Models\User;
-use App\Notifications\SubscriptionPaymentSubmitted;
 use App\Support\Rupiah;
 use App\Support\SubscriptionConfig;
 use BackedEnum;
@@ -19,7 +19,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Notification as FacadesNotification;
 
 class Subscription extends Page
 {
@@ -146,14 +145,7 @@ class Subscription extends Page
         /** @var SubscriptionPackage $package */
         $package = $data['package'];
 
-        $payment = $this->user()->subscriptionPayments()->create([
-            'package' => $package,
-            'amount' => $package->price(),
-            'proof_path' => $data['proof_path'],
-            'note' => $data['note'] ?? null,
-        ]);
-
-        $this->notifyAdmins($payment);
+        app(SubmitSubscriptionPayment::class)->handle($this->user(), $package, $data['proof_path'], $data['note'] ?? null);
 
         $this->form->fill();
 
@@ -227,12 +219,5 @@ class Subscription extends Page
         $book = $user->books()->oldest('id')->first();
 
         return $book === null ? url('/app') : static::getUrl(panel: 'app', tenant: $book);
-    }
-
-    private function notifyAdmins(SubscriptionPayment $payment): void
-    {
-        $admins = User::query()->where('is_admin', true)->get();
-
-        FacadesNotification::send($admins, new SubscriptionPaymentSubmitted($payment));
     }
 }
