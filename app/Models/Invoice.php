@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\URL;
 class Invoice extends Model
 {
     /** @use HasFactory<InvoiceFactory> */
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, SoftDeletes;
 
     public const int SHARED_PDF_LINK_DAYS = 30;
 

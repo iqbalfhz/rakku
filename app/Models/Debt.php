@@ -10,17 +10,27 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['type', 'counterparty_name', 'amount', 'due_date', 'description', 'reminder_enabled'])]
 #[ObservedBy(DebtObserver::class)]
 class Debt extends Model
 {
     /** @use HasFactory<DebtFactory> */
-    use HasFactory;
+    use HasFactory, HasUlids, SoftDeletes;
+
+    /**
+     * @return array<int, string>
+     */
+    public function uniqueIds(): array
+    {
+        return ['public_id'];
+    }
 
     /**
      * @return array<string, string>

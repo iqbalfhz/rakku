@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\V1\InvoiceShareController;
 use App\Http\Controllers\Api\V1\LoginController;
+use App\Http\Controllers\Api\V1\ReceiptController;
 use App\Http\Controllers\Api\V1\SyncController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,5 +19,13 @@ Route::prefix('v1')->group(function () {
 
         Route::get('books/{book:public_id}/sync', [SyncController::class, 'show'])->name('api.sync.pull');
         Route::post('books/{book:public_id}/sync', [SyncController::class, 'store'])->name('api.sync.push');
+
+        Route::get('books/{book:public_id}/transactions/{transactionPublicId}/receipt', [ReceiptController::class, 'show'])
+            ->name('api.receipt.show');
+        Route::post('books/{book:public_id}/transactions/{transactionPublicId}/receipt', [ReceiptController::class, 'store'])
+            ->name('api.receipt.store');
+
+        Route::post('books/{book:public_id}/invoices/{invoicePublicId}/share', [InvoiceShareController::class, 'store'])
+            ->name('api.invoice.share');
     });
 });

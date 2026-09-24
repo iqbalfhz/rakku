@@ -4,7 +4,7 @@ namespace App\Filament\App\Resources\Invoices\Actions;
 
 use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
-use App\Support\Rupiah;
+use App\Support\InvoiceMessage;
 use App\Support\WhatsApp;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -56,7 +56,7 @@ class SendInvoiceViaWhatsAppAction extends Action
 
                 $record->markAsSentIfDraft();
 
-                $whatsAppUrl = WhatsApp::chatUrl($data['phone'], $this->message($record));
+                $whatsAppUrl = WhatsApp::chatUrl($data['phone'], InvoiceMessage::forSharing($record));
 
                 $livewire->js('window.open('.Js::from($whatsAppUrl).', "_blank")');
 
@@ -71,22 +71,5 @@ class SendInvoiceViaWhatsAppAction extends Action
                     ])
                     ->send();
             });
-    }
-
-    private function message(Invoice $invoice): string
-    {
-        $invoice->loadMissing(['book', 'client', 'items']);
-
-        return implode("\n", [
-            "Halo {$invoice->client->name},",
-            '',
-            "Berikut invoice {$invoice->invoice_number} dari {$invoice->book->name}.",
-            'Total: '.Rupiah::format($invoice->totalAmount()),
-            'Jatuh tempo: '.$invoice->due_date->translatedFormat('d F Y'),
-            '',
-            'Unduh PDF: '.$invoice->sharedPdfUrl(),
-            '',
-            'Terima kasih.',
-        ]);
     }
 }

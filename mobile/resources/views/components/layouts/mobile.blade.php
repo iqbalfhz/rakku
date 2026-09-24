@@ -28,6 +28,9 @@
 
             <a class="tabs__tab {{ request()->routeIs('history') ? 'tabs__tab--on' : '' }}"
                href="{{ route('history') }}" wire:navigate>Riwayat</a>
+
+            <a class="tabs__tab {{ request()->routeIs('debt*') ? 'tabs__tab--on' : '' }}"
+               href="{{ route('debts') }}" wire:navigate>Utang</a>
         </nav>
     @endif
 

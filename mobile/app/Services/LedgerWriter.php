@@ -16,13 +16,45 @@ use Illuminate\Support\Str;
 class LedgerWriter
 {
     /**
-     * @param  array{account_public_id: string, category_public_id?: string|null, type: string, amount: float, description?: string|null, transaction_date: string}  $data
+     * Antrean ke server dimatikan untuk catatan yang di sana lahir dari baris lain,
+     * misalnya transaksi hasil cicilan utang — kalau ikut didorong, ia akan tercatat dua kali.
+     *
+     * @param  array{public_id?: string, account_public_id: string, category_public_id?: string|null, type: string, amount: float, description?: string|null, transaction_date: string, receipt_local_path?: string|null}  $data
      */
-    public function record(array $data): Transaction
+    public function record(array $data, bool $queueForServer = true): Transaction
     {
-        return DB::transaction(function () use ($data): Transaction {
+        return DB::transaction(function () use ($data, $queueForServer): Transaction {
             $transaction = Transaction::query()->create([
-                'public_id' => Str::lower((string) Str::ulid()),
+                'public_id' => $data['public_id'] ?? Str::lower((string) Str::ulid()),
+                'account_public_id' => $data['account_public_id'],
+                'category_public_id' => $data['category_public_id'] ?? null,
+                'type' => $data['type'],
+                'amount' => $data['amount'],
+                'description' => $data['description'] ?? null,
+                'transaction_date' => $data['transaction_date'],
+                'receipt_local_path' => $data['receipt_local_path'] ?? null,
+                'is_dirty' => $queueForServer,
+                'is_deleted' => false,
+            ]);
+
+            $this->adjustBalance($transaction->account_public_id, $transaction->signedAmount());
+
+            return $transaction;
+        });
+    }
+
+    /**
+     * Ubah catatan yang sudah ada. Saldo lama dibatalkan dulu sebelum yang baru
+     * diterapkan, supaya pindah akun atau ganti nominal tidak meninggalkan selisih.
+     *
+     * @param  array{account_public_id: string, category_public_id?: string|null, type: string, amount: float, description?: string|null, transaction_date: string, receipt_local_path?: string|null}  $data
+     */
+    public function revise(Transaction $transaction, array $data): Transaction
+    {
+        return DB::transaction(function () use ($transaction, $data): Transaction {
+            $this->adjustBalance($transaction->account_public_id, -$transaction->signedAmount());
+
+            $transaction->fill([
                 'account_public_id' => $data['account_public_id'],
                 'category_public_id' => $data['category_public_id'] ?? null,
                 'type' => $data['type'],
@@ -30,8 +62,14 @@ class LedgerWriter
                 'description' => $data['description'] ?? null,
                 'transaction_date' => $data['transaction_date'],
                 'is_dirty' => true,
-                'is_deleted' => false,
             ]);
+
+            if (array_key_exists('receipt_local_path', $data) && $data['receipt_local_path'] !== null) {
+                $transaction->receipt_local_path = $data['receipt_local_path'];
+                $transaction->has_receipt = false;
+            }
+
+            $transaction->save();
 
             $this->adjustBalance($transaction->account_public_id, $transaction->signedAmount());
 

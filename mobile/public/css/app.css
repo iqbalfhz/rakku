@@ -192,6 +192,28 @@ body {
 
 .stamp--muted { color: var(--ink-soft); }
 
+.stamp--due { color: var(--debit); }
+
+/* Batang pemakaian anggaran: garis tipis yang terisi, seukuran garis rambut buku kas. */
+.gauge {
+    height: 6px;
+    margin-top: 10px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: var(--paper);
+    overflow: hidden;
+}
+
+.gauge__fill {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+}
+
+.gauge__fill--warn { background: #c98a1f; }
+
+.gauge__fill--over { background: var(--debit); }
+
 /* Baris buku kas: keterangan di kiri, nominal di kanan, dipisah garis rambut. */
 .entry {
     display: flex;
@@ -369,17 +391,18 @@ a.button { text-decoration: none; }
 .tabs__tab {
     flex: 1;
     max-width: 160px;
-    padding: 14px 8px 16px;
+    padding: 14px 4px 16px;
     border: 1px solid var(--rule);
     border-bottom: 0;
     border-radius: 14px 14px 0 0;
     background: var(--paper-raised);
     color: var(--ink-soft);
-    font-size: 12px;
-    letter-spacing: .14em;
+    font-size: 11px;
+    letter-spacing: .08em;
     text-transform: uppercase;
     text-align: center;
     text-decoration: none;
+    white-space: nowrap;
     box-shadow: 0 -8px 20px -18px rgba(0, 0, 0, .6);
 }
 
@@ -411,4 +434,15 @@ a.button { text-decoration: none; }
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     font-size: 14px;
+}
+
+/* Foto struk: sudut membulat tipis, tinggi dibatasi supaya tidak mendominasi layar. */
+.receipt {
+    display: block;
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    margin-bottom: 12px;
 }

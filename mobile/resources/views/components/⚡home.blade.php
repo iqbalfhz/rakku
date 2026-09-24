@@ -3,7 +3,11 @@
 use App\Models\Account;
 use App\Models\Transaction;
 use App\Services\ApiClient;
+use App\Services\AutoSync;
+use App\Services\LedgerWiper;
 use App\Services\LedgerWriter;
+use App\Services\PendingChanges;
+use App\Services\PlanGate;
 use App\Services\SyncEngine;
 use App\Services\TokenStore;
 use App\Support\Rupiah;
@@ -49,6 +53,19 @@ new class extends Component
         $this->readSession($tokenStore);
     }
 
+    /**
+     * Sinkron yang berjalan sendiri: saat beranda terbuka, saat aplikasi kembali
+     * ke depan, dan berkala selama dibiarkan terbuka. Gagal tidak diberitahukan —
+     * pengguna tidak sedang meminta apa pun, dan tombol manual tetap ada
+     * untuk saat mereka ingin memastikan.
+     */
+    public function autoSync(AutoSync $autoSync, TokenStore $tokenStore): void
+    {
+        if ($autoSync->attempt()) {
+            $this->readSession($tokenStore);
+        }
+    }
+
     public function remove(int $transactionId, LedgerWriter $ledgerWriter): void
     {
         $transaction = Transaction::query()->visible()->find($transactionId);
@@ -58,22 +75,36 @@ new class extends Component
         }
     }
 
-    public function signOut(ApiClient $apiClient, TokenStore $tokenStore): void
+    /**
+     * Keluar berarti ponsel ini dibersihkan: isi buku orang lain tidak boleh
+     * tertinggal untuk siapa pun yang masuk berikutnya.
+     */
+    public function signOut(ApiClient $apiClient, TokenStore $tokenStore, PlanGate $planGate, LedgerWiper $ledgerWiper, PendingChanges $pendingChanges): void
     {
+        $pendingCount = $pendingChanges->count();
+
+        if ($pendingCount > 0) {
+            $this->syncError = "Masih ada {$pendingCount} catatan yang belum terkirim. Sinkronkan dulu sebelum keluar.";
+
+            return;
+        }
+
         $apiClient->logout();
+        $ledgerWiper->wipe();
         $tokenStore->forget();
+        $planGate->forget();
 
         $this->redirect(route('login'));
     }
 
     public function balance(): string
     {
-        return Rupiah::format((float) Account::query()->sum('current_balance'));
+        return Rupiah::format((float) Account::query()->visible()->sum('current_balance'));
     }
 
     public function pendingCount(): int
     {
-        return Transaction::query()->pending()->count();
+        return app(PendingChanges::class)->count();
     }
 
     /**
@@ -106,9 +137,11 @@ new class extends Component
 
 ?>
 
-<div>
+<div wire:init="autoSync" wire:poll.60s="autoSync"
+     x-on:visibilitychange.document="if (! document.hidden) { $wire.autoSync() }"
+     x-on:online.window="$wire.autoSync()">
     <header class="masthead">
-        <p class="masthead__brand">{{ $bookName }}</p>
+        <p class="masthead__brand"><a href="{{ route('books') }}" wire:navigate style="color: inherit;">{{ $bookName }} · ganti</a></p>
         <h1 class="masthead__title">Halo, {{ $userName }}</h1>
         <p class="masthead__note">Sinkron terakhir: {{ $this->syncLabel() }}</p>
     </header>
@@ -123,7 +156,7 @@ new class extends Component
 
         @if ($this->pendingCount() > 0)
             <p class="muted small" style="margin: 12px 0 0;">
-                {{ $this->pendingCount() }} catatan menunggu dikirim ke server.
+                {{ $this->pendingCount() }} catatan menunggu dikirim. Terkirim sendiri saat ada sinyal.
             </p>
         @endif
 
@@ -133,6 +166,21 @@ new class extends Component
             <span wire:loading.remove wire:target="sync">Sinkronkan sekarang</span>
             <span wire:loading wire:target="sync">Menyinkronkan…</span>
         </button>
+
+    </section>
+
+    <section class="tape">
+        <p class="tape__label">Buka juga</p>
+
+        @foreach ([['setup', 'Akun & kategori', 'Tempat uang disimpan dan cara mengelompokkannya'], ['report', 'Laporan', 'Arus kas dan laba-rugi per bulan'], ['budgets', 'Anggaran', 'Jatah belanja per kategori'], ['invoices', 'Invoice', 'Tagihan untuk klien'], ['recurring', 'Transaksi berulang', 'Sewa, listrik, dan yang tiap bulan sama']] as [$route, $title, $note])
+            <a class="entry" href="{{ route($route) }}" wire:navigate style="color: inherit; text-decoration: none;">
+                <div class="entry__label">
+                    <p class="entry__title">{{ $title }}</p>
+                    <p class="entry__meta">{{ $note }}</p>
+                </div>
+                <span class="entry__amount muted">›</span>
+            </a>
+        @endforeach
     </section>
 
     <section class="tape">

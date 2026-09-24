@@ -1,3 +1,3 @@
 <x-layouts.mobile title="Catat — RakKu">
-    <livewire:record />
+    <livewire:record :public-id="$publicId ?? null" />
 </x-layouts.mobile>

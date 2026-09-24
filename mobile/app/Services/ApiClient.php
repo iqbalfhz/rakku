@@ -56,16 +56,54 @@ class ApiClient
     }
 
     /**
-     * @param  list<array<string, mixed>>  $transactions
+     * @param  array<string, list<array<string, mixed>>>  $changes
      * @return array{applied: int, skipped: int, server_time: string}
      */
-    public function push(string $bookPublicId, array $transactions): array
+    public function push(string $bookPublicId, array $changes): array
     {
         $response = $this->authenticated()
-            ->post("books/{$bookPublicId}/sync", ['transactions' => $transactions])
+            ->post("books/{$bookPublicId}/sync", $changes)
             ->throw();
 
         return $response->json();
+    }
+
+    /**
+     * Minta link PDF bertanda tangan beserta pesan pengantarnya, untuk dibagikan
+     * lewat aplikasi apa pun yang ada di ponsel.
+     *
+     * @return array{invoice_number: string, url: string, message: string, status: string}
+     */
+    public function shareInvoice(string $bookPublicId, string $invoicePublicId): array
+    {
+        $response = $this->authenticated()
+            ->post("books/{$bookPublicId}/invoices/{$invoicePublicId}/share")
+            ->throw();
+
+        return $response->json();
+    }
+
+    /**
+     * Unggah foto struk. Dipisah dari sinkronisasi teks supaya catatan tidak
+     * tersandera koneksi lambat: angkanya sampai duluan, fotonya menyusul.
+     */
+    public function uploadReceipt(string $bookPublicId, string $transactionPublicId, string $absolutePath): void
+    {
+        $this->authenticated()
+            ->attach('receipt', file_get_contents($absolutePath), basename($absolutePath))
+            ->post("books/{$bookPublicId}/transactions/{$transactionPublicId}/receipt")
+            ->throw();
+    }
+
+    /**
+     * Ambil foto struk dari server untuk catatan lama yang fotonya tidak ada di ponsel ini.
+     */
+    public function downloadReceipt(string $bookPublicId, string $transactionPublicId): string
+    {
+        return $this->authenticated()
+            ->get("books/{$bookPublicId}/transactions/{$transactionPublicId}/receipt")
+            ->throw()
+            ->body();
     }
 
     public function logout(): void

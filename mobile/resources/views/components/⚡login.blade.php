@@ -34,6 +34,7 @@ new class extends Component
         }
 
         $tokenStore->rememberSession($session['token'], $session['user']['name']);
+        $tokenStore->rememberBooks($session['books']);
 
         $book = collect($session['books'])->firstWhere('is_default', true) ?? $session['books'][0] ?? null;
 

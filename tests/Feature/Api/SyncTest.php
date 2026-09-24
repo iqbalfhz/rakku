@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\SubscriptionPlan;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
@@ -185,4 +186,20 @@ it('gives categories with a stable id the phone can reference', function () {
     $response = $this->getJson("/api/v1/books/{$this->book->public_id}/sync");
 
     expect(collect($response->json('categories'))->pluck('public_id'))->toContain($category->public_id);
+});
+
+it('tells the phone whether the account is premium and until when', function () {
+    $this->user->subscribeTo(SubscriptionPlan::Premium, now()->addMonth());
+
+    $response = $this->getJson("/api/v1/books/{$this->book->public_id}/sync")->assertSuccessful();
+
+    expect($response->json('plan.is_premium'))->toBeTrue()
+        ->and($response->json('plan.expires_at'))->toEndWith('Z');
+});
+
+it('reports a free account plainly', function () {
+    $response = $this->getJson("/api/v1/books/{$this->book->public_id}/sync")->assertSuccessful();
+
+    expect($response->json('plan.is_premium'))->toBeFalse()
+        ->and($response->json('plan.expires_at'))->toBeNull();
 });

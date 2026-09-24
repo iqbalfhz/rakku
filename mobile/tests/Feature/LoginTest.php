@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Account;
+use App\Models\Debt;
+use App\Models\Transaction;
 use App\Services\TokenStore;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
@@ -145,4 +147,55 @@ it('forgets everything when the user signs out', function () {
 
     expect($tokenStore->isSignedIn())->toBeFalse()
         ->and($tokenStore->bookPublicId())->toBeNull();
+});
+
+it('clears the book off the phone when the user signs out', function () {
+    Http::fake(['*/api/v1/logout' => Http::response([])]);
+    app(TokenStore::class)->rememberSession('token-rahasia', 'Budi');
+    app(TokenStore::class)->rememberBook('01m3buku', 'Warung Kopi');
+    Account::query()->create(['public_id' => '01m3kas', 'name' => 'Kas Laci', 'type' => 'cash', 'current_balance' => 100_000]);
+    Debt::query()->create([
+        'public_id' => '01m3utang',
+        'type' => 'receivable',
+        'counterparty_name' => 'Bu Rina',
+        'amount' => 100_000,
+        'remaining_amount' => 100_000,
+    ]);
+
+    Livewire::test('home')->call('signOut')->assertRedirect(route('login'));
+
+    expect(Debt::query()->count())->toBe(0)
+        ->and(Account::query()->count())->toBe(0);
+});
+
+it('holds the user back from signing out while notes are still waiting', function () {
+    app(TokenStore::class)->rememberSession('token-rahasia', 'Budi');
+    app(TokenStore::class)->rememberBook('01m3buku', 'Warung Kopi');
+    Account::query()->create(['public_id' => '01m3kas', 'name' => 'Kas Laci', 'type' => 'cash', 'current_balance' => 0]);
+    Transaction::query()->create([
+        'public_id' => '01m3trx',
+        'account_public_id' => '01m3kas',
+        'type' => 'expense',
+        'amount' => 25_000,
+        'transaction_date' => '2026-10-01',
+        'is_dirty' => true,
+    ]);
+
+    Livewire::test('home')->call('signOut')->assertNoRedirect();
+
+    expect(app(TokenStore::class)->isSignedIn())->toBeTrue()
+        ->and(Transaction::query()->count())->toBe(1);
+});
+
+it('takes a signed-in phone straight to its book instead of asking again', function () {
+    app(TokenStore::class)->rememberSession('token-rahasia', 'Budi');
+    app(TokenStore::class)->rememberBook('01m3buku', 'Warung Kopi');
+
+    $this->get('/')->assertRedirect(route('home'));
+});
+
+it('keeps the tab bar off the login screen', function () {
+    $this->get('/')
+        ->assertSuccessful()
+        ->assertDontSee('tabs__tab', escape: false);
 });

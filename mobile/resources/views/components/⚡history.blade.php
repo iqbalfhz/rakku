@@ -88,6 +88,7 @@ new class extends Component
                         <span class="entry__amount {{ $transaction->isIncome() ? 'numeral--credit' : 'numeral--debit' }}">
                             {{ $transaction->isIncome() ? '+' : '−' }}{{ Rupiah::format((float) $transaction->amount) }}
                         </span>
+                        <a class="linkish" href="{{ route('record', $transaction->public_id) }}" wire:navigate>Ubah</a>
                         <button class="linkish" type="button" wire:click="remove({{ $transaction->id }})"
                                 wire:confirm="Hapus catatan ini?">Hapus</button>
                     </div>

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1b593309c65826c2bd4ee272699ec29c",
+    "content-hash": "e27244f451d28de1adc57063b56978e6",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -1281,6 +1281,68 @@
                 }
             ],
             "time": "2026-08-24T17:13:02+00:00"
+        },
+        {
+            "name": "ikromjon/nativephp-mobile-local-notifications",
+            "version": "v1.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Ikromjon1998/nativephp-mobile-local-notifications.git",
+                "reference": "9993e66e2a64cc879aa8eeb4436a853ad557fd37"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Ikromjon1998/nativephp-mobile-local-notifications/zipball/9993e66e2a64cc879aa8eeb4436a853ad557fd37",
+                "reference": "9993e66e2a64cc879aa8eeb4436a853ad557fd37",
+                "shasum": ""
+            },
+            "require": {
+                "nativephp/mobile": "*",
+                "php": "^8.3"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.0",
+                "laravel/pint": "^1.28",
+                "orchestra/testbench": "^9.0",
+                "pestphp/pest": "^3.0",
+                "phpstan/phpstan": "^2.0",
+                "rector/rector": "^2.3"
+            },
+            "type": "nativephp-plugin",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Ikromjon\\LocalNotifications\\LocalNotificationsServiceProvider"
+                    ]
+                },
+                "nativephp": {
+                    "manifest": "nativephp.json"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Ikromjon\\LocalNotifications\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Local notifications plugin for NativePHP Mobile - schedule, cancel, and manage local notifications with channels, badges, sounds, and repeat intervals",
+            "keywords": [
+                "laravel",
+                "local-notifications",
+                "mobile",
+                "nativephp",
+                "notifications",
+                "reminders",
+                "schedule"
+            ],
+            "support": {
+                "issues": "https://github.com/Ikromjon1998/nativephp-mobile-local-notifications/issues",
+                "source": "https://github.com/Ikromjon1998/nativephp-mobile-local-notifications/tree/v1.2.1"
+            },
+            "time": "2026-03-12T11:05:30+00:00"
         },
         {
             "name": "laravel/framework",

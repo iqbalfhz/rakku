@@ -2,9 +2,16 @@
 
 use App\Models\Account;
 use App\Models\Category;
+use App\Models\Transaction;
+use App\Services\ApiClient;
 use App\Services\LedgerWriter;
+use App\Services\TokenStore;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Livewire\Attributes\On;
 use Livewire\Component;
+use Native\Mobile\Facades\Camera;
 
 new class extends Component
 {
@@ -20,10 +27,107 @@ new class extends Component
 
     public string $transactionDate = '';
 
-    public function mount(): void
+    public ?string $receiptPath = null;
+
+    public ?Transaction $transaction = null;
+
+    public ?string $downloadError = null;
+
+    public function mount(?string $publicId = null): void
     {
-        $this->transactionDate = today()->toDateString();
-        $this->accountPublicId = (string) Account::query()->value('public_id');
+        $this->transaction = $publicId === null
+            ? null
+            : Transaction::query()->visible()->where('public_id', $publicId)->firstOrFail();
+
+        if ($this->transaction === null) {
+            $this->transactionDate = today()->toDateString();
+            $this->accountPublicId = (string) Account::query()->visible()->value('public_id');
+
+            return;
+        }
+
+        $this->type = $this->transaction->type;
+        $this->amount = (string) (int) $this->transaction->amount;
+        $this->accountPublicId = $this->transaction->account_public_id;
+        $this->categoryPublicId = (string) $this->transaction->category_public_id;
+        $this->description = (string) $this->transaction->description;
+        $this->transactionDate = $this->transaction->transaction_date->toDateString();
+    }
+
+    public function isEditing(): bool
+    {
+        return $this->transaction !== null;
+    }
+
+    /**
+     * Buka kamera bawaan ponsel. Hasilnya datang lewat event, bukan nilai balik.
+     */
+    public function takePhoto(): void
+    {
+        Camera::getPhoto();
+    }
+
+    /**
+     * Foto disalin ke penyimpanan aplikasi supaya umurnya kita yang menentukan,
+     * bukan bergantung pada folder sementara milik kamera.
+     */
+    #[On('native:Native\Mobile\Events\Camera\PhotoTaken')]
+    public function photoTaken(string $path): void
+    {
+        if (! is_file($path)) {
+            return;
+        }
+
+        $storedPath = 'receipts/'.Str::lower((string) Str::ulid()).'.jpg';
+
+        Storage::disk('local')->put($storedPath, file_get_contents($path));
+
+        $this->receiptPath = $storedPath;
+    }
+
+    /**
+     * Foto lama tersimpan di server, bukan di ponsel ini. Diambil saat diminta saja,
+     * supaya membuka layar ubah tidak menyedot kuota tanpa alasan.
+     */
+    public function downloadPhoto(ApiClient $apiClient, TokenStore $tokenStore): void
+    {
+        if ($this->transaction === null || ! $this->transaction->has_receipt) {
+            return;
+        }
+
+        try {
+            $contents = $apiClient->downloadReceipt((string) $tokenStore->bookPublicId(), $this->transaction->public_id);
+        } catch (\Throwable) {
+            $this->downloadError = 'Foto gagal diambil. Coba lagi saat sinyal membaik.';
+
+            return;
+        }
+
+        $storedPath = 'receipts/'.Str::lower((string) Str::ulid()).'.jpg';
+        Storage::disk('local')->put($storedPath, $contents);
+
+        $this->transaction->update(['receipt_local_path' => $storedPath]);
+        $this->transaction->refresh();
+    }
+
+    public function photoDataUri(): ?string
+    {
+        $localPath = $this->receiptPath ?? $this->transaction?->receipt_local_path;
+
+        if ($localPath === null || ! Storage::disk('local')->exists($localPath)) {
+            return null;
+        }
+
+        return 'data:image/jpeg;base64,'.base64_encode(Storage::disk('local')->get($localPath));
+    }
+
+    public function removePhoto(): void
+    {
+        if ($this->receiptPath !== null) {
+            Storage::disk('local')->delete($this->receiptPath);
+        }
+
+        $this->receiptPath = null;
     }
 
     /**
@@ -47,14 +151,19 @@ new class extends Component
             'transactionDate' => 'tanggal',
         ]);
 
-        $ledgerWriter->record([
+        $attributes = [
             'account_public_id' => $data['accountPublicId'],
             'category_public_id' => $data['categoryPublicId'] ?: null,
             'type' => $data['type'],
             'amount' => (float) $data['amount'],
             'description' => $data['description'] ?: null,
             'transaction_date' => $data['transactionDate'],
-        ]);
+            'receipt_local_path' => $this->receiptPath,
+        ];
+
+        $this->transaction === null
+            ? $ledgerWriter->record($attributes)
+            : $ledgerWriter->revise($this->transaction, $attributes);
 
         $this->redirect(route('home'));
     }
@@ -64,7 +173,7 @@ new class extends Component
      */
     public function accounts(): Collection
     {
-        return Account::query()->orderBy('name')->get();
+        return Account::query()->visible()->orderBy('name')->get();
     }
 
     /**
@@ -74,7 +183,7 @@ new class extends Component
      */
     public function categories(): Collection
     {
-        return Category::query()->where('type', $this->type)->orderBy('name')->get();
+        return Category::query()->visible()->where('type', $this->type)->orderBy('name')->get();
     }
 
     public function updatedType(): void
@@ -87,8 +196,8 @@ new class extends Component
 
 <div>
     <header class="masthead">
-        <p class="masthead__brand">Catatan baru</p>
-        <h1 class="masthead__title">Tulis<br>transaksi.</h1>
+        <p class="masthead__brand">{{ $this->isEditing() ? 'Ubah catatan' : 'Catatan baru' }}</p>
+        <h1 class="masthead__title">{{ $this->isEditing() ? 'Perbaiki' : 'Tulis' }}<br>transaksi.</h1>
         <p class="masthead__note">Tersimpan di ponsel walau sedang tanpa sinyal.</p>
     </header>
 
@@ -146,7 +255,31 @@ new class extends Component
             @error('description') <p class="field__hint">{{ $message }}</p> @enderror
         </div>
 
-        <button class="button" type="submit">Simpan catatan</button>
+        <div class="field">
+            <span class="field__label">Foto struk</span>
+
+            @if ($downloadError)
+                <p class="notice">{{ $downloadError }}</p>
+            @endif
+
+            @if ($this->photoDataUri())
+                <img class="receipt" src="{{ $this->photoDataUri() }}" alt="Foto struk">
+
+                <div class="entry" style="border-bottom: 0;">
+                    <span class="stamp">Foto terpasang</span>
+                    <button class="linkish" type="button" wire:click="removePhoto">Ganti foto</button>
+                </div>
+            @elseif ($this->isEditing() && $transaction->has_receipt)
+                <button class="button button--quiet" type="button" wire:click="downloadPhoto" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="downloadPhoto">Lihat foto struk</span>
+                    <span wire:loading wire:target="downloadPhoto">Mengambil foto…</span>
+                </button>
+            @else
+                <button class="button button--quiet" type="button" wire:click="takePhoto">Ambil foto struk</button>
+            @endif
+        </div>
+
+        <button class="button" type="submit">{{ $this->isEditing() ? 'Simpan perubahan' : 'Simpan catatan' }}</button>
     </form>
 
     <a class="button button--quiet" href="{{ route('home') }}" wire:navigate style="margin-top: 12px;">Batal</a>

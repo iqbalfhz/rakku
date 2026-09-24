@@ -18,6 +18,7 @@ class Transaction extends Model
         'transaction_date',
         'has_receipt',
         'server_updated_at',
+        'receipt_local_path',
         'is_dirty',
         'is_deleted',
     ];
@@ -71,6 +72,16 @@ class Transaction extends Model
     public function scopeVisible(Builder $query): void
     {
         $query->where('is_deleted', false);
+    }
+
+    /**
+     * Foto struk yang sudah dipotret tapi belum sampai ke server.
+     *
+     * @param  Builder<Transaction>  $query
+     */
+    public function scopeWithPendingReceipt(Builder $query): void
+    {
+        $query->whereNotNull('receipt_local_path')->where('has_receipt', false);
     }
 
     public function isIncome(): bool
