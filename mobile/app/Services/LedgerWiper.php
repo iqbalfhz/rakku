@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Client;
 use App\Models\Debt;
 use App\Models\DebtPayment;
+use App\Models\DeviceReport;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
@@ -39,6 +40,10 @@ class LedgerWiper
             Transaction::query()->delete();
             Account::query()->delete();
             Category::query()->delete();
+
+            // Laporan kerusakan yang tertinggal akan salah alamat kalau ponsel ini
+            // dipakai akun lain; kehilangan satu laporan lebih baik daripada itu.
+            DeviceReport::query()->delete();
         });
     }
 }

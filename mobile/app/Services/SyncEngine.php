@@ -32,6 +32,7 @@ class SyncEngine
         private TokenStore $tokenStore,
         private PlanGate $planGate,
         private DebtReminderScheduler $reminderScheduler,
+        private DiagnosticsReporter $diagnosticsReporter,
     ) {}
 
     public function sync(): void
@@ -39,6 +40,9 @@ class SyncEngine
         $this->push();
         $this->uploadReceipts();
         $this->pull();
+
+        // Kabar kerusakan ikut jadwal yang sama; gagalnya tidak mengganggu apa pun.
+        $this->diagnosticsReporter->flush();
     }
 
     /**

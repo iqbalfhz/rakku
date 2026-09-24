@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\DiagnosticsReporter;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,4 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Error di ponsel orang lain tidak pernah sampai ke kita kalau tidak dikabarkan.
+        $exceptions->report(fn (Throwable $exception) => app(DiagnosticsReporter::class)->report(
+            DiagnosticsReporter::CRASH,
+            $exception::class.': '.$exception->getMessage(),
+        ));
     })->create();

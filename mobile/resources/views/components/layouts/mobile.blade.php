@@ -1,3 +1,4 @@
+@use('App\Services\DeviceDatabase')
 @use('App\Services\TokenStore')
 
 <!DOCTYPE html>
@@ -13,9 +14,20 @@
     @livewireStyles
 </head>
 <body>
-    @php ($hasOpenBook = app(TokenStore::class)->bookPublicId() !== null)
+    @php
+        // Saat penyimpanan rusak, TokenStore pun belum tentu bisa dibaca — jadi ia
+        // sengaja tidak disentuh sebelum keadaan itu dipastikan aman.
+        $databaseIsBroken = app(DeviceDatabase::class)->hasFailed();
+        $hasOpenBook = ! $databaseIsBroken && app(TokenStore::class)->bookPublicId() !== null;
+    @endphp
 
     <main class="shell {{ $hasOpenBook ? 'shell--with-tabs' : '' }}">
+        @if ($databaseIsBroken && ! request()->routeIs('trouble'))
+            <a class="notice" href="{{ route('trouble') }}" wire:navigate style="display: block; text-decoration: none;">
+                Penyimpanan di ponsel ini perlu diperbaiki. Ketuk untuk melihat caranya.
+            </a>
+        @endif
+
         {{ $slot }}
     </main>
 

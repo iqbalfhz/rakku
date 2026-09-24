@@ -2,11 +2,10 @@
 
 namespace App\Providers;
 
+use App\Services\DeviceDatabase;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\ServiceProvider;
-use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,9 +28,9 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Database di dalam ponsel bertahan antar-pembaruan aplikasi, sehingga migrasi
-     * baru tidak pernah berjalan kalau tidak dipanggil dari sini. Tanpa ini, versi
-     * baru aplikasi akan menabrak tabel lama milik pengguna.
+     * Tidak ada yang menjalankan `php artisan migrate` di dalam ponsel orang, jadi
+     * migrasi dipanggil saat aplikasi menyala. Yang menangani kegagalannya ada di
+     * DeviceDatabase.
      */
     private function migrateDeviceDatabase(): void
     {
@@ -39,11 +38,6 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        try {
-            Artisan::call('migrate', ['--force' => true]);
-        } catch (Throwable) {
-            // Gagal migrasi tidak boleh membuat aplikasi mati total: layar tetap
-            // terbuka, dan masalahnya terbaca di log perangkat.
-        }
+        app(DeviceDatabase::class)->migrate();
     }
 }

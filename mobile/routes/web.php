@@ -8,6 +8,9 @@ Route::view('/', 'pages.login')
     ->middleware(RedirectIfSignedIn::class)
     ->name('login');
 
+// Di luar penjaga masuk: kalau penyimpanan rusak, status masuk pun belum tentu terbaca.
+Route::view('/masalah', 'pages.trouble')->name('trouble');
+
 Route::middleware(RequireSignedIn::class)->group(function () {
     Route::view('/beranda', 'pages.home')->name('home');
     Route::view('/riwayat', 'pages.history')->name('history');

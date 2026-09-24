@@ -78,6 +78,16 @@ class ApiClient
     }
 
     /**
+     * Kirim kabar kerusakan yang menumpuk di ponsel.
+     *
+     * @param  list<array<string, mixed>>  $reports
+     */
+    public function sendDeviceReports(array $reports): void
+    {
+        $this->authenticated()->post('device-reports', ['reports' => $reports])->throw();
+    }
+
+    /**
      * Harga, rekening tujuan, dan riwayat pengajuan premium.
      *
      * @return array<string, mixed>

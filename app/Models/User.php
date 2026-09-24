@@ -126,6 +126,14 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
             ->where('expires_at', '<=', now()->addDays($days)));
     }
 
+    /**
+     * @return HasMany<DeviceReport, $this>
+     */
+    public function deviceReports(): HasMany
+    {
+        return $this->hasMany(DeviceReport::class);
+    }
+
     public function canCreateBook(): bool
     {
         return $this->isPremium() || $this->books()->doesntExist();
