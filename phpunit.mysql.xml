@@ -9,6 +9,10 @@
     dan pembulatan desimal. Bug seperti itu lolos seluruh suite SQLite lalu
     muncul di data pengguna yang sungguhan.
 
+    Produksi berjalan di MySQL 8.4.11 (dicek 25 Sep 2026), lokal 8.4.6. Yang perlu
+    sama adalah minornya, bukan patch-nya. Kalau suatu saat produksi pindah minor,
+    samakan juga MySQL di sini.
+
     Jalankan sebelum deploy:
 
         vendor/bin/pest -c phpunit.mysql.xml
