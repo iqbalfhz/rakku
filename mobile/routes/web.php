@@ -8,6 +8,10 @@ Route::view('/', 'pages.login')
     ->middleware(RedirectIfSignedIn::class)
     ->name('login');
 
+Route::view('/daftar', 'pages.register')
+    ->middleware(RedirectIfSignedIn::class)
+    ->name('register');
+
 // Di luar penjaga masuk: kalau penyimpanan rusak, status masuk pun belum tentu terbaca.
 Route::view('/masalah', 'pages.trouble')->name('trouble');
 
@@ -20,6 +24,10 @@ Route::middleware(RequireSignedIn::class)->group(function () {
         ->name('record');
 
     Route::view('/akun', 'pages.account')->name('account');
+
+    Route::view('/bantuan', 'pages.support')->name('support');
+    Route::get('/bantuan/{ticketNumber}', fn (string $ticketNumber) => view('pages.support', ['ticketNumber' => $ticketNumber]))
+        ->name('support.show');
     Route::view('/pindah', 'pages.transfers')->name('transfers');
     Route::view('/pengaturan', 'pages.setup')->name('setup');
     Route::view('/langganan', 'pages.subscription')->name('subscription');

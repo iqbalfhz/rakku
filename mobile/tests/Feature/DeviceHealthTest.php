@@ -6,7 +6,9 @@ use App\Services\DiagnosticsReporter;
 use App\Services\SyncEngine;
 use App\Services\TokenStore;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -180,4 +182,55 @@ it('says which version of the app was running when it broke', function () {
     app(DiagnosticsReporter::class)->flush();
 
     Http::assertSent(fn ($request): bool => ($request['reports'][0]['context']['app_version'] ?? null) === '1.4.0');
+});
+
+it('survives a runtime that does not set PHP_SELF, as the phone does not', function () {
+    $original = $_SERVER['PHP_SELF'] ?? null;
+    unset($_SERVER['PHP_SELF']);
+
+    try {
+        app(DeviceDatabase::class)->migrate();
+    } finally {
+        $_SERVER['PHP_SELF'] = $original;
+    }
+
+    expect(app(DeviceDatabase::class)->hasFailed())->toBeFalse();
+});
+
+it('does not re-run migrations on every screen once everything is applied', function () {
+    Artisan::shouldReceive('call')->never();
+
+    app(DeviceDatabase::class)->migrateIfNeeded();
+
+    expect(app(DeviceDatabase::class)->hasFailed())->toBeFalse();
+});
+
+it('runs them again as soon as the app ships a new one', function () {
+    Artisan::shouldReceive('call')->with('migrate', ['--force' => true])->once()->andReturn(0);
+
+    // Satu migrasi hilang dari catatan berarti aplikasi membawa yang belum diterapkan.
+    DB::table('migrations')->orderByDesc('id')->limit(1)->delete();
+
+    app(DeviceDatabase::class)->migrateIfNeeded();
+});
+
+it('runs them when the migrations table is not there at all', function () {
+    Artisan::shouldReceive('call')->with('migrate', ['--force' => true])->once()->andReturn(0);
+
+    Schema::drop('migrations');
+
+    app(DeviceDatabase::class)->migrateIfNeeded();
+});
+
+it('ignores migrations recorded by packages when deciding if it is up to date', function () {
+    Artisan::shouldReceive('call')->never();
+
+    // NativePHP menyumbang migrasi dari dalam paketnya, jadi catatan di database
+    // selalu lebih banyak daripada isi database/migrations.
+    DB::table('migrations')->insert([
+        'migration' => '9999_12_31_000000_create_jobs_table',
+        'batch' => 1,
+    ]);
+
+    app(DeviceDatabase::class)->migrateIfNeeded();
 });

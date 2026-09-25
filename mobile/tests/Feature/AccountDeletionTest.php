@@ -93,5 +93,52 @@ it('will not proceed without both confirmations', function () {
         ->call('deleteAccount')
         ->assertHasErrors(['email', 'password']);
 
-    Http::assertNothingSent();
+    // Membuka layar ini memang memanggil daftar perangkat; yang tidak boleh terjadi
+    // adalah permintaan penghapusan akun.
+    Http::assertNotSent(fn ($request): bool => $request->method() === 'DELETE' && str_ends_with($request->url(), '/account'));
+});
+
+/**
+ * Daftar perangkat seperti yang dikirim server.
+ *
+ * @param  list<array<string, mixed>>  $devices
+ */
+function fakeDeviceList(array $devices): void
+{
+    Http::fake(['*/api/v1/devices' => Http::response(['devices' => $devices])]);
+}
+
+it('shows which phones can still open the account', function () {
+    fakeDeviceList([
+        ['id' => 1, 'name' => 'Ponsel RakKu', 'is_current' => true, 'last_used_at' => '2026-09-24T03:00:00Z', 'signed_in_at' => '2026-09-01T03:00:00Z'],
+        ['id' => 2, 'name' => 'Ponsel lama', 'is_current' => false, 'last_used_at' => null, 'signed_in_at' => '2026-08-01T03:00:00Z'],
+    ]);
+
+    Livewire::test('account')
+        ->assertSee('Ponsel RakKu')
+        ->assertSee('Ponsel ini')
+        ->assertSee('Ponsel lama')
+        ->assertSee('belum pernah dipakai');
+});
+
+it('cuts off a phone that was lost', function () {
+    Http::fake([
+        '*/api/v1/devices/2' => Http::response(['message' => 'Akses perangkat itu dicabut.']),
+        '*/api/v1/devices' => Http::response(['devices' => [
+            ['id' => 1, 'name' => 'Ponsel RakKu', 'is_current' => true, 'last_used_at' => null, 'signed_in_at' => '2026-09-01T03:00:00Z'],
+        ]]),
+    ]);
+
+    Livewire::test('account')
+        ->call('revokeDevice', 2)
+        ->assertSet('notice', 'Akses perangkat itu dicabut.')
+        ->assertDontSee('Ponsel lama');
+});
+
+it('admits it needs a signal instead of pretending no phone has access', function () {
+    Http::fake(['*/api/v1/devices' => Http::response('', 500)]);
+
+    Livewire::test('account')
+        ->assertSet('devices', null)
+        ->assertSee('Butuh sinyal untuk melihat daftarnya');
 });

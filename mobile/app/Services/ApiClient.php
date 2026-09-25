@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -34,6 +35,38 @@ class ApiClient
 
         if ($response->status() === 422) {
             throw new RuntimeException($response->json('message') ?? 'Email atau kata sandi salah.');
+        }
+
+        if ($response->failed()) {
+            throw new RuntimeException('Server sedang tidak bisa dihubungi. Coba lagi sebentar.');
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Daftar akun baru. Tidak mengembalikan token: email harus diverifikasi dulu.
+     *
+     * @return array{message: string, email: string}
+     *
+     * @throws RuntimeException saat ditolak server atau server tidak terjangkau
+     */
+    public function register(string $name, string $email, string $password): array
+    {
+        $response = $this->request()->post('register', [
+            'name' => $name,
+            'email' => $email,
+            'password' => $password,
+        ]);
+
+        if ($response->status() === 422) {
+            throw new RuntimeException(
+                collect($response->json('errors', []))->flatten()->first() ?? 'Data pendaftaran ditolak server.',
+            );
+        }
+
+        if ($response->status() === 429) {
+            throw new RuntimeException('Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.');
         }
 
         if ($response->failed()) {
@@ -75,6 +108,78 @@ class ApiClient
         }
 
         return $response->json();
+    }
+
+    /**
+     * Perangkat yang masih bisa membuka akun ini.
+     *
+     * @return array{devices: list<array<string, mixed>>}
+     */
+    public function devices(): array
+    {
+        return $this->authenticated()->get('devices')->throw()->json();
+    }
+
+    /**
+     * @throws RuntimeException saat ditolak server atau server tidak terjangkau
+     */
+    public function revokeDevice(int $tokenId): void
+    {
+        $this->answer($this->authenticated()->delete("devices/{$tokenId}"));
+    }
+
+    /**
+     * Daftar tiket bantuan milik pengguna.
+     *
+     * @return array{tickets: list<array<string, mixed>>}
+     */
+    public function supportTickets(): array
+    {
+        return $this->authenticated()->get('support-tickets')->throw()->json();
+    }
+
+    /**
+     * Satu percakapan lengkap dengan seluruh balasannya.
+     *
+     * @return array{ticket: array<string, mixed>, messages: list<array<string, mixed>>}
+     */
+    public function supportTicket(string $ticketNumber): array
+    {
+        return $this->authenticated()->get("support-tickets/{$ticketNumber}")->throw()->json();
+    }
+
+    /**
+     * Buka aduan baru. Lampiran opsional, biasanya tangkapan layar.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws RuntimeException saat ditolak server atau server tidak terjangkau
+     */
+    public function openSupportTicket(string $subject, string $body, ?string $attachmentPath): array
+    {
+        $request = $this->authenticated();
+
+        if ($attachmentPath !== null) {
+            $request = $request->attach('attachment', file_get_contents($attachmentPath), basename($attachmentPath));
+        }
+
+        return $this->answer($request->post('support-tickets', ['subject' => $subject, 'body' => $body]));
+    }
+
+    /**
+     * @return array<string, mixed>
+     *
+     * @throws RuntimeException saat ditolak server atau server tidak terjangkau
+     */
+    public function replyToSupportTicket(string $ticketNumber, string $body, ?string $attachmentPath): array
+    {
+        $request = $this->authenticated();
+
+        if ($attachmentPath !== null) {
+            $request = $request->attach('attachment', file_get_contents($attachmentPath), basename($attachmentPath));
+        }
+
+        return $this->answer($request->post("support-tickets/{$ticketNumber}/messages", ['body' => $body]));
     }
 
     /**
@@ -205,6 +310,28 @@ class ApiClient
         } catch (ConnectionException) {
             // Tanpa sinyal pun pengguna tetap boleh keluar; token lokal dihapus oleh pemanggil.
         }
+    }
+
+    /**
+     * Terjemahkan jawaban server jadi hasil atau pesan yang layak dibaca pengguna.
+     *
+     * @return array<string, mixed>
+     */
+    private function answer(Response $response): array
+    {
+        if ($response->status() === 422) {
+            throw new RuntimeException(
+                collect($response->json('errors', []))->flatten()->first()
+                    ?? $response->json('message')
+                    ?? 'Kiriman ditolak server.',
+            );
+        }
+
+        if ($response->failed()) {
+            throw new RuntimeException('Gagal terkirim. Coba lagi saat sinyal membaik.');
+        }
+
+        return $response->json();
     }
 
     private function authenticated(): PendingRequest

@@ -27,6 +27,8 @@ class DeviceDatabase
     public function migrate(): void
     {
         try {
+            $this->makeArtisanRunnable();
+
             Artisan::call('migrate', ['--force' => true]);
         } catch (Throwable $exception) {
             $this->rememberFailure($exception);
@@ -35,6 +37,60 @@ class DeviceDatabase
         }
 
         $this->forgetFailure();
+    }
+
+    /**
+     * Dipanggil saat aplikasi menyala, yaitu pada setiap layar yang dibuka.
+     *
+     * Memanggil Artisan dari permintaan web memaksa Laravel mendaftarkan seluruh
+     * perintah console dan memuat ulang konfigurasinya — terlalu mahal untuk
+     * dikerjakan berulang kali, padahal migrasi hanya perlu jalan sesudah aplikasi
+     * diperbarui. Tombol "Coba perbaiki" memakai migrate() langsung, tanpa penjaga ini.
+     */
+    public function migrateIfNeeded(): void
+    {
+        if ($this->isUpToDate()) {
+            return;
+        }
+
+        $this->migrate();
+    }
+
+    /**
+     * Yang dibandingkan adalah nama berkas migrasi, bukan jumlahnya: NativePHP
+     * menyumbang dua migrasi dari dalam paketnya sendiri, jadi catatan di database
+     * selalu lebih banyak daripada isi database/migrations dan perbandingan angka
+     * tidak pernah cocok — akibatnya migrasi jalan lagi di setiap layar yang dibuka.
+     *
+     * Setiap keraguan — tabelnya belum ada, kueri gagal — dijawab dengan menjalankan migrasi.
+     */
+    private function isUpToDate(): bool
+    {
+        try {
+            $migrator = app('migrator');
+
+            $shipped = $migrator->getMigrationFiles(
+                array_merge($migrator->paths(), [database_path('migrations')])
+            );
+
+            return array_diff(array_keys($shipped), $migrator->getRepository()->getRan()) === [];
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Menjalankan Artisan dari dalam permintaan web memaksa Laravel mendaftarkan
+     * seluruh perintah console, dan salah satunya — `completion` bawaan Symfony —
+     * membaca $_SERVER['PHP_SELF'] saat dibuat. Runtime PHP yang ditanam NativePHP
+     * ke dalam ponsel tidak menyediakannya, jadi migrasi selalu gagal di situ,
+     * setelah tabelnya sebenarnya sudah terbentuk.
+     *
+     * Di web biasa nilai itu selalu ada, jadi baris ini hanya berlaku di ponsel.
+     */
+    private function makeArtisanRunnable(): void
+    {
+        $_SERVER['PHP_SELF'] ??= 'artisan';
     }
 
     public function hasFailed(): bool

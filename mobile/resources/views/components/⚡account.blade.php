@@ -17,6 +17,58 @@ new class extends Component
 
     public ?string $error = null;
 
+    public ?string $notice = null;
+
+    /**
+     * Perangkat yang masih punya akses. Null berarti belum berhasil diambil dari server.
+     *
+     * @var list<array<string, mixed>>|null
+     */
+    public ?array $devices = null;
+
+    public function mount(ApiClient $apiClient): void
+    {
+        $this->loadDevices($apiClient);
+    }
+
+    /**
+     * Daftar perangkat hanya ada di server — ponsel tidak bisa tahu sendiri siapa
+     * lagi yang memegang akses akun ini.
+     */
+    public function loadDevices(ApiClient $apiClient): void
+    {
+        try {
+            $this->devices = $apiClient->devices()['devices'];
+        } catch (\Throwable) {
+            $this->devices = null;
+        }
+    }
+
+    public function revokeDevice(int $tokenId, ApiClient $apiClient): void
+    {
+        $this->error = null;
+        $this->notice = null;
+
+        try {
+            $apiClient->revokeDevice($tokenId);
+        } catch (\RuntimeException $exception) {
+            $this->error = $exception->getMessage();
+
+            return;
+        }
+
+        $this->notice = 'Akses perangkat itu dicabut.';
+
+        $this->loadDevices($apiClient);
+    }
+
+    public function momentOf(?string $timestamp): string
+    {
+        return $timestamp === null
+            ? 'belum pernah dipakai'
+            : \Carbon\CarbonImmutable::parse($timestamp)->diffForHumans();
+    }
+
     public function startDeleting(): void
     {
         $this->error = null;
@@ -93,6 +145,10 @@ new class extends Component
         <p class="notice">{{ $error }}</p>
     @endif
 
+    @if ($notice)
+        <p class="notice">{{ $notice }}</p>
+    @endif
+
     <section class="tape">
         <p class="tape__label">Pengaturan</p>
 
@@ -104,6 +160,14 @@ new class extends Component
             <span class="entry__amount muted">›</span>
         </a>
 
+        <a class="entry" href="{{ route('support') }}" wire:navigate style="color: inherit; text-decoration: none;">
+            <div class="entry__label">
+                <p class="entry__title">Bantuan</p>
+                <p class="entry__meta">Tanya atau laporkan masalah ke admin</p>
+            </div>
+            <span class="entry__amount muted">›</span>
+        </a>
+
         <a class="entry" href="{{ route('books') }}" wire:navigate style="color: inherit; text-decoration: none;">
             <div class="entry__label">
                 <p class="entry__title">Buku</p>
@@ -111,6 +175,39 @@ new class extends Component
             </div>
             <span class="entry__amount muted">›</span>
         </a>
+    </section>
+
+    <section class="tape">
+        <p class="tape__label">Perangkat yang masih punya akses</p>
+
+        @if ($devices === null)
+            <p class="entry__title muted" style="margin: 8px 0 0;">Butuh sinyal untuk melihat daftarnya.</p>
+            <button class="button button--quiet" type="button" wire:click="loadDevices" style="margin-top: 16px;">Coba lagi</button>
+        @else
+            @foreach ($devices as $device)
+                <div class="entry">
+                    <div class="entry__label">
+                        <p class="entry__title">{{ $device['name'] }}</p>
+                        <p class="entry__meta">
+                            Terakhir dipakai {{ $this->momentOf($device['last_used_at']) }}
+                            @if ($device['is_current']) · <span class="stamp">Ponsel ini</span> @endif
+                        </p>
+                    </div>
+
+                    @unless ($device['is_current'])
+                        <button class="linkish" type="button" wire:click="revokeDevice({{ $device['id'] }})"
+                                wire:confirm="Cabut akses perangkat ini? Ia harus masuk ulang untuk memakai akun Anda.">
+                            Cabut
+                        </button>
+                    @endunless
+                </div>
+            @endforeach
+
+            <p class="muted small" style="margin: 14px 0 0;">
+                Ponsel yang hilang dicabut dari sini. Untuk ponsel yang sedang Anda pegang, pakai tombol Keluar
+                di Beranda supaya salinan bukunya ikut dibersihkan.
+            </p>
+        @endif
     </section>
 
     <section class="tape">

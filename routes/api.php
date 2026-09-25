@@ -2,11 +2,14 @@
 
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\BookController;
+use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\DeviceReportController;
 use App\Http\Controllers\Api\V1\InvoiceShareController;
 use App\Http\Controllers\Api\V1\LoginController;
 use App\Http\Controllers\Api\V1\ReceiptController;
+use App\Http\Controllers\Api\V1\RegisterController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
+use App\Http\Controllers\Api\V1\SupportTicketController;
 use App\Http\Controllers\Api\V1\SyncController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +26,10 @@ Route::prefix('v1')->group(function () {
         ->middleware('throttle:6,1')
         ->name('api.login');
 
+    Route::post('register', [RegisterController::class, 'store'])
+        ->middleware('throttle:3,1')
+        ->name('api.register');
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::middleware('throttle:120,1')->group(function () {
             Route::post('logout', [LoginController::class, 'destroy'])->name('api.logout');
@@ -30,6 +37,12 @@ Route::prefix('v1')->group(function () {
             Route::get('subscription', [SubscriptionController::class, 'show'])->name('api.subscription.show');
 
             Route::get('books', [BookController::class, 'index'])->name('api.books.index');
+
+            Route::get('devices', [DeviceController::class, 'index'])->name('api.devices.index');
+            Route::delete('devices/{tokenId}', [DeviceController::class, 'destroy'])->name('api.devices.destroy');
+
+            Route::get('support-tickets', [SupportTicketController::class, 'index'])->name('api.support.index');
+            Route::get('support-tickets/{ticket:ticket_number}', [SupportTicketController::class, 'show'])->name('api.support.show');
 
             Route::get('books/{book:public_id}/sync', [SyncController::class, 'show'])->name('api.sync.pull');
             Route::post('books/{book:public_id}/sync', [SyncController::class, 'store'])->name('api.sync.push');
@@ -42,6 +55,10 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('throttle:20,1')->group(function () {
             Route::post('device-reports', [DeviceReportController::class, 'store'])->name('api.device-reports.store');
+
+            Route::post('support-tickets', [SupportTicketController::class, 'store'])->name('api.support.store');
+            Route::post('support-tickets/{ticket:ticket_number}/messages', [SupportTicketController::class, 'reply'])
+                ->name('api.support.reply');
 
             Route::post('books/{book:public_id}/invoices/{invoicePublicId}/share', [InvoiceShareController::class, 'store'])
                 ->name('api.invoice.share');

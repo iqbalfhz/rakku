@@ -128,8 +128,15 @@ it('keeps saying it plainly when a manual sync fails', function () {
         ->assertSet('syncError', 'Gagal menyambung ke server. Catatan di ponsel tetap aman dan akan dikirim saat sinyal kembali.');
 });
 
-it('starts the sync by itself as soon as the home screen is open', function () {
-    Livewire::test('home')->assertSeeHtml('wire:init="autoSync"');
+/**
+ * Dulu ini wire:init. Di ponsel, permintaan itu berangkat sebelum NativePHP
+ * memasang pencegat POST-nya, sampai di PHP tanpa body, lalu dijawab 419 —
+ * pengguna melihat "Halaman ini sudah kedaluwarsa" setiap kali membuka aplikasi.
+ */
+it('starts the sync by itself once the page is ready for it', function () {
+    Livewire::test('home')
+        ->assertSeeHtml('x-on:bridge-ready.window')
+        ->assertDontSeeHtml('wire:init');
 });
 
 it('counts everything that is waiting, not only transactions', function () {
@@ -148,4 +155,15 @@ it('counts everything that is waiting, not only transactions', function () {
 
 it('reaches for the server the moment the signal comes back', function () {
     Livewire::test('home')->assertSeeHtml('x-on:online.window');
+});
+
+it('never claims the last sync happened in the future', function () {
+    // Jam server selalu sedikit berbeda dari jam ponsel.
+    app(TokenStore::class)->rememberSync(now()->addSeconds(36)->toIso8601String());
+
+    Livewire::test('home')->assertSee('Sinkron terakhir: Baru saja');
+});
+
+it('says plainly when the phone has never synced', function () {
+    Livewire::test('home')->assertSee('Sinkron terakhir: Belum pernah');
 });

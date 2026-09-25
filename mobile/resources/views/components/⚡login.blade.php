@@ -105,7 +105,7 @@ new class extends Component
         </button>
     </form>
 
-    <p class="muted small" style="margin-top: 28px;">
-        Belum punya akun? Daftar dulu lewat rakku.iqbalfhz.my.id, lalu masuk dari sini.
-    </p>
+    <a class="button button--quiet" href="{{ route('register') }}" wire:navigate style="margin-top: 12px;">
+        Belum punya akun? Daftar
+    </a>
 </div>

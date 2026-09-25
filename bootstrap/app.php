@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\ServerErrorAlert;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -24,4 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Log tidak ada yang membaca sampai ada yang mengeluh; ini yang memberi tahu
+        // bahwa log itu perlu dibuka. Hanya error tak terduga — Laravel sudah menyaring
+        // validasi, 404, dan sejenisnya sebelum sampai ke sini.
+        $exceptions->report(fn (Throwable $exception) => ServerErrorAlert::send($exception));
     })->create();

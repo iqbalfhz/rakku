@@ -38,6 +38,6 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        app(DeviceDatabase::class)->migrate();
+        app(DeviceDatabase::class)->migrateIfNeeded();
     }
 }

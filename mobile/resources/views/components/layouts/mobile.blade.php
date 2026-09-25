@@ -49,5 +49,46 @@
     @endif
 
     @livewireScripts
+
+    {{--
+        NativePHP baru memasang pencegat POST-nya saat halaman selesai dimuat.
+        Permintaan Livewire yang berangkat lebih dulu sampai ke PHP tanpa body,
+        jadi token CSRF-nya ikut hilang dan dijawab 419 "Halaman ini sudah
+        kedaluwarsa". Layar yang menyinkron sendiri menunggu kabar ini dulu,
+        bukan memakai wire:init yang menembak sebelum pencegatnya siap.
+    --}}
+    <script>
+        (function () {
+            const onDevice = typeof window.AndroidPOST !== 'undefined';
+            const intercepted = () => String(window.fetch).includes('X-NativePHP-Req-Id');
+            const announce = () => window.dispatchEvent(new Event('bridge-ready'));
+
+            function waitForBridge() {
+                if (! onDevice || intercepted()) {
+                    announce();
+
+                    return;
+                }
+
+                let waited = 0;
+
+                const timer = setInterval(function () {
+                    waited += 50;
+
+                    if (intercepted() || waited >= 3000) {
+                        clearInterval(timer);
+                        announce();
+                    }
+                }, 50);
+            }
+
+            // Alpine mendaftarkan pendengarnya saat Livewire selesai menyala.
+            if (window.Livewire) {
+                waitForBridge();
+            } else {
+                document.addEventListener('livewire:initialized', waitForBridge);
+            }
+        })();
+    </script>
 </body>
 </html>

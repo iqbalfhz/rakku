@@ -120,11 +120,21 @@ new class extends Component
             ->get();
     }
 
+    /**
+     * Yang tersimpan adalah jam server — itu penanda posisi sinkron, jadi tidak
+     * boleh diganti jam ponsel. Tapi labelnya dibandingkan dengan jam ponsel,
+     * dan selisih beberapa detik saja sudah membuatnya terbaca sebagai masa
+     * depan: "36 detik dari sekarang".
+     */
     public function syncLabel(): string
     {
-        return $this->lastSyncedAt === null
-            ? 'Belum pernah'
-            : \Carbon\CarbonImmutable::parse($this->lastSyncedAt)->diffForHumans();
+        if ($this->lastSyncedAt === null) {
+            return 'Belum pernah';
+        }
+
+        $syncedAt = \Carbon\CarbonImmutable::parse($this->lastSyncedAt);
+
+        return $syncedAt->isFuture() ? 'Baru saja' : $syncedAt->diffForHumans();
     }
 
     private function readSession(TokenStore $tokenStore): void
@@ -137,7 +147,8 @@ new class extends Component
 
 ?>
 
-<div wire:init="autoSync" wire:poll.60s="autoSync"
+<div wire:poll.60s="autoSync"
+     x-on:bridge-ready.window="$wire.autoSync()"
      x-on:visibilitychange.document="if (! document.hidden) { $wire.autoSync() }"
      x-on:online.window="$wire.autoSync()">
     <header class="masthead">
