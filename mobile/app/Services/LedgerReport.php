@@ -61,6 +61,41 @@ class LedgerReport
     }
 
     /**
+     * Total masuk dan keluar per bulan, beberapa bulan terakhir sampai bulan yang
+     * sedang dilihat.
+     *
+     * Bulan tanpa catatan tetap dikembalikan sebagai nol, bukan dilewati: bulan yang
+     * hilang dari grafik akan terbaca seolah tidak pernah ada, padahal justru bulan
+     * kosong itu yang bercerita.
+     *
+     * @return Collection<int, array{month: CarbonImmutable, income: float, expense: float}>
+     */
+    public function monthlyTotals(CarbonInterface $until, int $months): Collection
+    {
+        $last = CarbonImmutable::parse($until->toDateString())->startOfMonth();
+        $first = $last->subMonths($months - 1);
+
+        $perDay = Transaction::query()
+            ->visible()
+            ->whereBetween('transaction_date', [$first->toDateString(), $last->endOfMonth()->toDateString()])
+            ->selectRaw('transaction_date, type, SUM(amount) as total')
+            ->groupBy('transaction_date', 'type')
+            ->get()
+            ->groupBy(fn (Transaction $row): string => CarbonImmutable::parse($row->transaction_date)->format('Y-m'));
+
+        return collect(range(0, $months - 1))->map(function (int $offset) use ($first, $perDay): array {
+            $month = $first->addMonths($offset);
+            $rows = $perDay->get($month->format('Y-m')) ?? collect();
+
+            return [
+                'month' => $month,
+                'income' => (float) $rows->where('type', 'income')->sum('total'),
+                'expense' => (float) $rows->where('type', 'expense')->sum('total'),
+            ];
+        });
+    }
+
+    /**
      * Pengeluaran per kategori, dikunci dengan public_id kategorinya supaya anggaran
      * bisa mencocokkan sendiri tanpa satu kueri untuk tiap baris.
      *

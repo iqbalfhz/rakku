@@ -48,6 +48,12 @@
     --accent-wash: #dfeee7;
     --debit: #a83d28;
     --shadow: 0 18px 40px -28px rgba(23, 22, 15, .55);
+
+    /* Warna marka grafik. Sengaja lebih pekat daripada --accent dan --debit:
+       petak kecil butuh chroma lebih tinggi daripada teks dan tepian agar tidak
+       terbaca abu-abu, dan pasangan ini diuji terpisah untuk buta warna. */
+    --chart-income: #07795b;
+    --chart-expense: #b8371f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -62,6 +68,10 @@
         --accent-wash: #1d322b;
         --debit: #e08161;
         --shadow: 0 18px 40px -28px rgba(0, 0, 0, .8);
+
+        /* Bukan pembalikan otomatis: dipilih ulang terhadap latar gelap. */
+        --chart-income: #2ea583;
+        --chart-expense: #d95f35;
     }
 }
 
@@ -446,3 +456,90 @@ a.button { text-decoration: none; }
     border-radius: 12px;
     margin-bottom: 12px;
 }
+
+/* Grafik tren: sepasang batang per bulan, digambar dengan CSS biasa tanpa pustaka
+   dan tanpa proses build — sama seperti sisa berkas ini. Laporan harus tetap
+   terbuka penuh saat ponsel tidak punya sinyal sama sekali. */
+.chart { margin-top: 18px; }
+
+.chart__plot {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    height: 132px;
+    border-bottom: 1px solid var(--rule);
+}
+
+.chart__month {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 4px 4px 0 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+.chart__month--picked { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+
+/* Tinggi batang dihitung di PHP, termasuk lantai untuk nominal kecil. Tidak ada
+   min-height di sini: nol harus benar-benar tidak menggambar apa pun. */
+.chart__bar {
+    width: 12px;
+    border-radius: 4px 4px 0 0;
+}
+
+.chart__bar--income { background: var(--chart-income); }
+.chart__bar--expense { background: var(--chart-expense); }
+
+.chart__ticks {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.chart__tick {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-soft);
+}
+
+.chart__legend {
+    display: flex;
+    gap: 18px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--ink-soft);
+}
+
+.chart__key {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.chart__swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.chart__readout {
+    margin: 12px 0 0;
+    min-height: 19px;
+    font-size: 13px;
+    color: var(--ink-soft);
+}
+
+/* Baris kategori yang membawa batang porsinya sendiri di baris ketiga. */
+.entry--charted { flex-wrap: wrap; }
+.entry--charted .gauge { flex-basis: 100%; }
+
+.gauge__fill--income { background: var(--chart-income); }
+.gauge__fill--expense { background: var(--chart-expense); }

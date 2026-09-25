@@ -9,6 +9,12 @@ use Livewire\Component;
 
 new class extends Component
 {
+    /**
+     * Cukup panjang untuk memperlihatkan arah, cukup pendek untuk muat di layar
+     * ponsel tanpa batang yang saling berimpit.
+     */
+    private const int TREND_MONTHS = 6;
+
     public string $month = '';
 
     public function mount(): void
@@ -50,6 +56,48 @@ new class extends Component
     public function byCategory(string $type): Collection
     {
         return app(LedgerReport::class)->totalsByCategory($type, $this->from(), $this->until());
+    }
+
+    /**
+     * Deret untuk grafik tren, lengkap dengan tinggi batang dalam persen.
+     *
+     * Tingginya dihitung di sini, bukan di CSS, dan keduanya diskalakan terhadap
+     * satu nilai terbesar yang sama — kalau masing-masing diskalakan sendiri,
+     * batang masuk dan keluar tidak lagi bisa dibandingkan.
+     *
+     * @return list<array{label: string, short: string, income: string, expense: string, incomeHeight: float, expenseHeight: float}>
+     */
+    public function trend(): array
+    {
+        $series = app(LedgerReport::class)->monthlyTotals($this->until(), self::TREND_MONTHS);
+
+        $peak = max((float) $series->max('income'), (float) $series->max('expense'));
+
+        return $series->map(fn (array $row): array => [
+            'label' => $row['month']->translatedFormat('F Y'),
+            'short' => $row['month']->translatedFormat('M'),
+            'income' => Rupiah::format($row['income']),
+            'expense' => Rupiah::format($row['expense']),
+            'incomeHeight' => $this->barHeight($row['income'], $peak),
+            'expenseHeight' => $this->barHeight($row['expense'], $peak),
+        ])->all();
+    }
+
+    /**
+     * Bulan bernilai nol tidak digambar sama sekali.
+     *
+     * Batang setipis apa pun tetap terbaca sebagai "ada uang masuk", dan lima
+     * bulan kosong berjajar jadi terlihat seperti aktivitas kecil yang tidak
+     * pernah terjadi. Sebaliknya nominal kecil yang bukan nol disisakan tinggi
+     * minimum supaya tidak hilang di bawah garis dasar.
+     */
+    private function barHeight(float $amount, float $peak): float
+    {
+        if ($amount <= 0 || $peak <= 0) {
+            return 0.0;
+        }
+
+        return max(round($amount / $peak * 100, 2), 1.5);
     }
 
     public function shareOf(float $total, float $amount): int
@@ -131,6 +179,49 @@ new class extends Component
             <a class="button" href="{{ route('subscription') }}" wire:navigate style="margin-top: 18px;">Aktifkan premium</a>
         </section>
     @else
+        @php ($trend = $this->trend())
+
+        <section class="tape">
+            <p class="tape__label">Enam bulan terakhir</p>
+
+            @if (collect($trend)->every(fn (array $row): bool => $row['incomeHeight'] == 0 && $row['expenseHeight'] == 0))
+                <p class="entry__title muted" style="margin: 10px 0 0;">Belum ada catatan di rentang ini.</p>
+            @else
+                <div class="chart" x-data="{ picked: null, months: @js($trend) }">
+                    <div class="chart__plot">
+                        @foreach ($trend as $index => $row)
+                            <button type="button"
+                                    class="chart__month"
+                                    :class="picked === {{ $index }} ? 'chart__month--picked' : ''"
+                                    x-on:click="picked = picked === {{ $index }} ? null : {{ $index }}"
+                                    aria-label="{{ $row['label'] }}: masuk {{ $row['income'] }}, keluar {{ $row['expense'] }}">
+                                <span class="chart__bar chart__bar--income" style="height: {{ $row['incomeHeight'] }}%"></span>
+                                <span class="chart__bar chart__bar--expense" style="height: {{ $row['expenseHeight'] }}%"></span>
+                            </button>
+                        @endforeach
+                    </div>
+
+                    <div class="chart__ticks">
+                        @foreach ($trend as $row)
+                            <span class="chart__tick">{{ $row['short'] }}</span>
+                        @endforeach
+                    </div>
+
+                    <p class="chart__legend">
+                        <span class="chart__key"><span class="chart__swatch" style="background: var(--chart-income);"></span>Masuk</span>
+                        <span class="chart__key"><span class="chart__swatch" style="background: var(--chart-expense);"></span>Keluar</span>
+                    </p>
+
+                    <p class="chart__readout"
+                       x-text="picked === null
+                            ? 'Ketuk satu bulan untuk melihat angkanya.'
+                            : months[picked].label + ' · masuk ' + months[picked].income + ' · keluar ' + months[picked].expense">
+                        Ketuk satu bulan untuk melihat angkanya.
+                    </p>
+                </div>
+            @endif
+        </section>
+
         <section class="tape">
             <p class="tape__label">{{ $totals['net'] >= 0 ? 'Laba bersih' : 'Rugi bersih' }}</p>
 
@@ -147,12 +238,17 @@ new class extends Component
                 <p class="tape__label">{{ $title }}</p>
 
                 @forelse ($this->byCategory($type) as $row)
-                    <div class="entry">
+                    @php ($share = $this->shareOf($groupTotal, $row['total']))
+
+                    <div class="entry entry--charted">
                         <div class="entry__label">
                             <p class="entry__title">{{ $row['category'] }}</p>
-                            <p class="entry__meta">{{ $this->shareOf($groupTotal, $row['total']) }}% dari total</p>
+                            <p class="entry__meta">{{ $share }}% dari total</p>
                         </div>
                         <span class="entry__amount">{{ Rupiah::format($row['total']) }}</span>
+                        <div class="gauge">
+                            <span class="gauge__fill gauge__fill--{{ $type }}" style="width: {{ $share }}%;"></span>
+                        </div>
                     </div>
                 @empty
                     <div class="entry">

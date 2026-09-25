@@ -47,7 +47,7 @@ Urutannya bukan urutan besar-kecil, melainkan urutan **mahal-murahnya diperbaiki
 |---|---|---|
 | 13 | **Billing otomatis** (Midtrans/Xendit) | Sengaja ditunda. Validasi manual lewat transfer masih sanggup selama pelanggan sedikit. |
 | 14 | **Satu buku untuk beberapa orang** | Kasir + pemilik. Inilah yang membuat Laravel Reverb jadi berguna; sebelum ada kebutuhan ini, sinkron seketika dari server ke ponsel nilainya kecil. |
-| 15 | **Grafik di laporan ponsel** | Sekarang hanya angka. |
+| 15 | ~~**Grafik di laporan ponsel**~~ — **selesai 25 Sep 2026** | Tren enam bulan (batang masuk/keluar per bulan) dan batang porsi di tiap baris kategori. Digambar dengan CSS biasa dari sisi PHP — tanpa pustaka JS dan tanpa proses build, supaya laporan tetap terbuka penuh tanpa sinyal. Warna markanya sengaja tidak memakai `--accent` dan `--debit` apa adanya: keduanya terlalu pucat sebagai petak kecil dan pasangannya gagal uji buta warna, jadi dipakai `--chart-income` dan `--chart-expense` yang divalidasi terpisah untuk mode terang dan gelap. Bulan bernilai nol sengaja tidak digambar sama sekali — batang setipis apa pun terbaca sebagai "ada uang masuk". |
 
 ---
 

@@ -53,15 +53,68 @@ it('calls the month a deficit when more went out than came in', function () {
     Livewire::test('report')->assertSee('Defisit')->assertSee('Rp 150.000');
 });
 
-it('leaves out the months the reader did not ask for', function () {
+/**
+ * Dulu tes ini memastikan nominal bulan lain tidak muncul di mana pun di halaman.
+ * Sejak ada grafik enam bulan, halaman ini memang menampilkannya dengan sengaja —
+ * jadi yang diperiksa sekarang angka yang dijumlah untuk bulan yang diminta.
+ */
+it('adds up only the month the reader asked for', function () {
     recordedTransaction(['type' => 'income', 'amount' => 500_000, 'transaction_date' => '2026-09-20']);
     recordedTransaction(['type' => 'income', 'amount' => 70_000, 'transaction_date' => '2026-10-05']);
 
+    $report = Livewire::test('report')->assertSee('Rp 70.000');
+
+    expect($report->instance()->totals())->toBe(['income' => 70_000.0, 'expense' => 0.0, 'net' => 70_000.0]);
+
+    $report->set('month', '2026-09');
+
+    expect($report->instance()->totals())->toBe(['income' => 500_000.0, 'expense' => 0.0, 'net' => 500_000.0]);
+});
+
+it('shows six months of trend, counting the empty ones as zero', function () {
+    recordedTransaction(['type' => 'income', 'amount' => 500_000, 'transaction_date' => '2026-10-05']);
+
+    $trend = Livewire::test('report')->instance()->trend();
+
+    expect($trend)->toHaveCount(6)
+        ->and(array_column($trend, 'short'))->toBe(['Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt'])
+        ->and($trend[0])->toMatchArray(['income' => 'Rp 0', 'incomeHeight' => 0.0])
+        ->and($trend[5])->toMatchArray(['income' => 'Rp 500.000', 'incomeHeight' => 100.0]);
+});
+
+/**
+ * Kalau masuk dan keluar diskalakan sendiri-sendiri, dua batang setinggi sama
+ * bisa berarti nominal yang jauh berbeda — grafiknya berbohong sambil terlihat rapi.
+ */
+it('scales money in and money out against one shared peak', function () {
+    recordedTransaction(['type' => 'income', 'amount' => 400_000, 'transaction_date' => '2026-10-05']);
+    recordedTransaction(['type' => 'expense', 'amount' => 100_000, 'transaction_date' => '2026-10-06']);
+
+    $trend = Livewire::test('report')->instance()->trend();
+
+    expect($trend[5])->toMatchArray(['incomeHeight' => 100.0, 'expenseHeight' => 25.0]);
+});
+
+it('leaves a note that was deleted but not sent yet out of the trend', function () {
+    recordedTransaction(['type' => 'income', 'amount' => 500_000, 'transaction_date' => '2026-10-05']);
+    recordedTransaction(['type' => 'income', 'amount' => 80_000, 'transaction_date' => '2026-10-06', 'is_deleted' => true, 'is_dirty' => true]);
+
+    $trend = Livewire::test('report')->instance()->trend();
+
+    expect($trend[5]['income'])->toBe('Rp 500.000');
+});
+
+it('says so plainly instead of drawing an empty chart', function () {
     Livewire::test('report')
-        ->assertSee('Rp 70.000')
-        ->assertDontSee('Rp 500.000')
-        ->set('month', '2026-09')
-        ->assertSee('Rp 500.000');
+        ->assertSee('Belum ada catatan di rentang ini.')
+        ->assertDontSeeHtml('chart__plot');
+});
+
+it('keeps the trend behind the premium gate', function () {
+    app(PlanGate::class)->remember(['is_premium' => false, 'expires_at' => null]);
+    recordedTransaction(['type' => 'income', 'amount' => 500_000, 'transaction_date' => '2026-10-05']);
+
+    Livewire::test('report')->assertDontSeeHtml('chart__plot');
 });
 
 it('leaves out a note that was deleted but not sent yet', function () {
@@ -112,4 +165,20 @@ it('admits when the month asked for is older than what the phone holds', functio
         ->assertDontSee('lebih tua daripada catatan')
         ->set('month', '2026-06')
         ->assertSee('lebih tua daripada catatan');
+});
+
+/**
+ * Batang setipis apa pun tetap terbaca sebagai "ada uang masuk", jadi nol harus
+ * benar-benar tidak menggambar apa pun — sementara nominal kecil yang bukan nol
+ * justru tidak boleh hilang.
+ */
+it('draws nothing for an empty month but keeps a sliver for a small one', function () {
+    recordedTransaction(['type' => 'income', 'amount' => 1_000_000, 'transaction_date' => '2026-10-05']);
+    recordedTransaction(['type' => 'income', 'amount' => 1_000, 'transaction_date' => '2026-09-05']);
+
+    $trend = Livewire::test('report')->instance()->trend();
+
+    expect($trend[0]['incomeHeight'])->toBe(0.0)
+        ->and($trend[4]['incomeHeight'])->toBe(1.5)
+        ->and($trend[5]['incomeHeight'])->toBe(100.0);
 });
