@@ -91,7 +91,12 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            'throw' => false,
+
+            // Satu-satunya pemakai disk ini adalah pencadangan, dan ia sudah menangkap
+            // setiap kegagalan sendiri. Dibiarkan false, alasan penolakan dari penyedia
+            // — kredensial salah, bucket tidak ada, endpoint keliru — hilang sebelum
+            // sampai ke pesan yang dibaca admin.
+            'throw' => true,
             'report' => false,
         ],
 

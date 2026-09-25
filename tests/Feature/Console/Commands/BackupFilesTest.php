@@ -1,7 +1,10 @@
 <?php
 
 use App\Console\Commands\BackupFiles;
+use App\Models\User;
+use App\Notifications\BackupFailed;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -128,4 +131,58 @@ it('deletes the oldest archives beyond the retention limit', function () {
     expect(File::glob($this->destination.'/*.zip'))->toHaveCount(2)
         ->and(File::exists($this->destination.'/'.BackupFiles::ARCHIVE_PREFIX.'2026-09-01-020000.zip'))->toBeFalse()
         ->and(File::exists($this->destination.'/'.BackupFiles::ARCHIVE_PREFIX.'2026-09-02-020000.zip'))->toBeTrue();
+});
+
+/**
+ * Disk s3 disetel 'throw' => false, jadi kegagalan menulis datang sebagai nilai
+ * kembalian false, bukan exception. Sebelum ini diperiksa, cadangan yang tidak
+ * pernah terkirim dilaporkan berhasil.
+ */
+it('refuses to call a rejected upload a success', function () {
+    Storage::fake('s3');
+    config(['backup.offsite_disk' => 's3']);
+    File::put($this->source.'/receipts/struk.jpg', 'isi foto struk');
+
+    $disk = Mockery::mock(Storage::disk('s3'))->makePartial();
+    $disk->shouldReceive('writeStream')->once()->andReturnFalse();
+    Storage::set('s3', $disk);
+
+    $this->artisan('app:backup-files')
+        ->expectsOutputToContain('menolak tulisan')
+        ->assertFailed();
+});
+
+it('refuses to trust an upload that did not land', function () {
+    Storage::fake('s3');
+    config(['backup.offsite_disk' => 's3']);
+    File::put($this->source.'/receipts/struk.jpg', 'isi foto struk');
+
+    // Penyimpanan bilang berhasil, tapi tidak ada apa-apa di sana.
+    $disk = Mockery::mock(Storage::disk('s3'))->makePartial();
+    $disk->shouldReceive('writeStream')->once()->andReturnTrue();
+    Storage::set('s3', $disk);
+
+    $this->artisan('app:backup-files')
+        ->expectsOutputToContain('Ukuran salinan tidak cocok')
+        ->assertFailed();
+});
+
+it('tells the admin when the backup did not happen', function () {
+    Notification::fake();
+    $admin = User::factory()->admin()->create();
+    config(['backup.source' => $this->source.'/tidak-ada']);
+
+    $this->artisan('app:backup-files')->assertFailed();
+
+    Notification::assertSentTo($admin, BackupFailed::class);
+});
+
+it('keeps quiet on a backup that went through', function () {
+    Notification::fake();
+    User::factory()->admin()->create();
+    File::put($this->source.'/receipts/struk.jpg', 'isi foto struk');
+
+    $this->artisan('app:backup-files')->assertSuccessful();
+
+    Notification::assertNothingSent();
 });

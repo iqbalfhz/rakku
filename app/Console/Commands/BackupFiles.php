@@ -2,13 +2,17 @@
 
 namespace App\Console\Commands;
 
+use App\Models\User;
+use App\Notifications\BackupFailed;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
 use Throwable;
 use ZipArchive;
@@ -27,7 +31,7 @@ class BackupFiles extends Command
         $source = (string) config('backup.source');
 
         if (! File::isDirectory($source)) {
-            $this->error("Folder {$source} tidak ada, tidak ada yang bisa diarsipkan.");
+            $this->reportFailure("Folder {$source} tidak ada, tidak ada yang bisa diarsipkan.");
 
             return self::FAILURE;
         }
@@ -48,7 +52,7 @@ class BackupFiles extends Command
         $archive = $destination.DIRECTORY_SEPARATOR.self::ARCHIVE_PREFIX.now()->format('Y-m-d-His').'.zip';
 
         if (! $this->compress($files, $source, $archive)) {
-            $this->error("Gagal menulis arsip ke {$archive}.");
+            $this->reportFailure("Gagal menulis arsip ke {$archive}.");
 
             return self::FAILURE;
         }
@@ -81,11 +85,9 @@ class BackupFiles extends Command
         $remotePath = trim((string) config('backup.offsite_directory'), '/').'/'.basename($archive);
 
         try {
-            $stream = fopen($archive, 'rb');
-            Storage::disk($disk)->writeStream($remotePath, $stream);
-            fclose($stream);
+            $this->upload($disk, $archive, $remotePath);
         } catch (Throwable $exception) {
-            $this->error("Arsip lokal selamat, tapi salinan ke {$disk} gagal: {$exception->getMessage()}");
+            $this->reportFailure("Arsip lokal selamat, tapi salinan ke {$disk} gagal: {$exception->getMessage()}");
 
             return self::FAILURE;
         }
@@ -95,6 +97,65 @@ class BackupFiles extends Command
         $this->info("Salinan terkirim ke {$disk}:{$remotePath}.".($prunedCount > 0 ? " {$prunedCount} salinan lama dihapus." : ''));
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Menulis arsip ke penyimpanan luar, lalu memastikan hasilnya benar-benar ada
+     * di sana dengan ukuran yang sama.
+     *
+     * Pemeriksaan ini bukan kehati-hatian berlebihan: disk s3 disetel
+     * 'throw' => false, jadi writeStream() mengembalikan false alih-alih melempar
+     * saat gagal. Tanpa memeriksa nilai kembaliannya, salinan yang tidak pernah
+     * terkirim akan dilaporkan berhasil — dan baru ketahuan saat dibutuhkan.
+     */
+    private function upload(string $disk, string $archive, string $remotePath): void
+    {
+        $stream = fopen($archive, 'rb');
+
+        if ($stream === false) {
+            throw new RuntimeException("Arsip {$archive} tidak bisa dibaca.");
+        }
+
+        try {
+            $written = Storage::disk($disk)->writeStream($remotePath, $stream);
+        } finally {
+            fclose($stream);
+        }
+
+        if ($written === false) {
+            throw new RuntimeException("Penyimpanan menolak tulisan ke {$remotePath}.");
+        }
+
+        $expected = (int) File::size($archive);
+        $actual = Storage::disk($disk)->fileExists($remotePath)
+            ? Storage::disk($disk)->size($remotePath)
+            : null;
+
+        if ($actual !== $expected) {
+            throw new RuntimeException(sprintf(
+                'Ukuran salinan tidak cocok: %d byte di server, %s di %s.',
+                $expected,
+                $actual === null ? 'tidak ada berkasnya' : $actual.' byte',
+                $disk,
+            ));
+        }
+    }
+
+    /**
+     * Perintah ini jalan dari scheduler, jadi yang dicetak ke layar tidak pernah
+     * terbaca siapa pun. Setiap kegagalan diteruskan ke admin lewat email.
+     */
+    private function reportFailure(string $reason): void
+    {
+        $this->error($reason);
+
+        try {
+            $admins = User::query()->where('is_admin', true)->get();
+
+            Notification::send($admins, new BackupFailed($reason));
+        } catch (Throwable) {
+            // Tidak ada tempat mengadu soal kegagalan mengadu.
+        }
     }
 
     /**
