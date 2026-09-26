@@ -21,8 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         // Error di ponsel orang lain tidak pernah sampai ke kita kalau tidak dikabarkan.
-        $exceptions->report(fn (Throwable $exception) => app(DiagnosticsReporter::class)->report(
+        // Yang dikirim exception-nya utuh, bukan hanya kalimatnya: tanpa berkas dan
+        // baris, kerusakan di ponsel yang tidak bisa kita pegang mustahil ditelusuri.
+        $exceptions->report(fn (Throwable $exception) => app(DiagnosticsReporter::class)->reportThrowable(
             DiagnosticsReporter::CRASH,
-            $exception::class.': '.$exception->getMessage(),
+            $exception,
         ));
     })->create();

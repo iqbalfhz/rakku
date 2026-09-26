@@ -9,13 +9,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class DeviceReport extends Model
 {
-    protected $fillable = ['kind', 'message', 'fingerprint', 'occurred_at'];
+    protected $fillable = ['kind', 'message', 'detail', 'context', 'fingerprint', 'occurred_at'];
 
     /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
-        return ['occurred_at' => 'datetime'];
+        return ['context' => 'array', 'occurred_at' => 'datetime'];
     }
 }

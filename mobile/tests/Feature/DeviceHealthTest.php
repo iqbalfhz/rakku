@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Native\Mobile\Testing\FakeBridge;
 
 beforeEach(function () {
     Storage::fake('local');
@@ -233,4 +234,152 @@ it('ignores migrations recorded by packages when deciding if it is up to date', 
     ]);
 
     app(DeviceDatabase::class)->migrateIfNeeded();
+});
+
+/**
+ * Menirukan jawaban jembatan NativePHP dari sebuah ponsel Samsung.
+ */
+function pretendPhone(): void
+{
+    FakeBridge::current()
+        ?->respondTo('Device.GetInfo', ['info' => json_encode([
+            'manufacturer' => 'samsung',
+            'model' => 'SM-A536E',
+            'operatingSystem' => 'Android',
+            'osVersion' => '14',
+            'androidSDKVersion' => 34,
+            'language' => 'id-ID',
+            'isVirtual' => false,
+            'webViewVersion' => '131.0.6778.81',
+        ])])
+        ->respondTo('Device.GetId', ['id' => 'a1b2c3d4e5f6a7b8']);
+}
+
+it('says which phone broke, not just that one did', function () {
+    pretendPhone();
+    Http::fake(['*/api/v1/device-reports' => Http::response(['received' => 1])]);
+
+    app(DiagnosticsReporter::class)->report(DiagnosticsReporter::CRASH, 'Sesuatu meledak');
+    app(DiagnosticsReporter::class)->flush();
+
+    Http::assertSent(function ($request): bool {
+        $context = $request['reports'][0]['context'];
+
+        return $context['device'] === 'Samsung SM-A536E'
+            && $context['os'] === 'Android 14'
+            && $context['sdk'] === '34'
+            && $context['language'] === 'id-ID'
+            && $context['webview'] === '131.0.6778.81'
+            && $context['is_virtual'] === false;
+    });
+});
+
+/**
+ * Pengganti alamat MAC, yang sejak Android 6 selalu terbaca 02:00:00:00:00:00
+ * dan dilarang diminta oleh Play Store.
+ */
+it('carries a device id that survives a reinstall but not a factory reset', function () {
+    pretendPhone();
+    Http::fake(['*/api/v1/device-reports' => Http::response(['received' => 1])]);
+
+    app(DiagnosticsReporter::class)->report(DiagnosticsReporter::CRASH, 'Sesuatu meledak');
+    app(DiagnosticsReporter::class)->flush();
+
+    Http::assertSent(fn ($request): bool => $request['reports'][0]['context']['device_id'] === 'a1b2c3d4e5f6a7b8');
+});
+
+it('leaves out what the phone could not tell it', function () {
+    Http::fake(['*/api/v1/device-reports' => Http::response(['received' => 1])]);
+
+    app(DiagnosticsReporter::class)->report(DiagnosticsReporter::CRASH, 'Sesuatu meledak');
+    app(DiagnosticsReporter::class)->flush();
+
+    Http::assertSent(function ($request): bool {
+        $context = $request['reports'][0]['context'];
+
+        return ! array_key_exists('device', $context)
+            && ! array_key_exists('device_id', $context)
+            && $context['app_version'] !== null;
+    });
+});
+
+/**
+ * "Undefined array key PHP_SELF" memberi tahu apa yang pecah, bukan di mana.
+ */
+it('writes down where an exception happened, not only what it said', function () {
+    $exception = new RuntimeException('Sesuatu meledak');
+
+    app(DiagnosticsReporter::class)->reportThrowable(DiagnosticsReporter::CRASH, $exception);
+
+    $report = DeviceReport::query()->sole();
+
+    expect($report->message)->toBe('Sesuatu meledak')
+        ->and($report->detail)->toContain('RuntimeException: Sesuatu meledak')
+        ->and($report->detail)->toContain(basename(__FILE__))
+        ->and($report->detail)->toContain('baris '.$exception->getLine());
+});
+
+it('sends the full trace along with the report', function () {
+    Http::fake(['*/api/v1/device-reports' => Http::response(['received' => 1])]);
+
+    app(DiagnosticsReporter::class)->reportThrowable(DiagnosticsReporter::CRASH, new RuntimeException('Sesuatu meledak'));
+    app(DiagnosticsReporter::class)->flush();
+
+    Http::assertSent(fn ($request): bool => str_contains((string) $request['reports'][0]['detail'], 'RuntimeException'));
+});
+
+it('cuts a trace too long to be worth carrying', function () {
+    app(DiagnosticsReporter::class)->report(DiagnosticsReporter::CRASH, 'Meledak', str_repeat('a', 9000));
+
+    expect(mb_strlen(DeviceReport::query()->sole()->detail))->toBe(DiagnosticsReporter::DETAIL_LIMIT);
+});
+
+/**
+ * Crash adalah sumber laporan yang paling sering, jadi justru di sinilah jejak
+ * tumpukan paling dibutuhkan — bukan hanya pada migrasi yang gagal.
+ */
+it('reports an uncaught error with its trace, not just its sentence', function () {
+    report(new RuntimeException('Layar ini meledak'));
+
+    $report = DeviceReport::query()->where('kind', DiagnosticsReporter::CRASH)->sole();
+
+    expect($report->message)->toBe('Layar ini meledak')
+        ->and($report->detail)->toContain('RuntimeException: Layar ini meledak')
+        ->and($report->detail)->toContain(basename(__FILE__));
+});
+
+it('falls back to the exception class when it carries no sentence', function () {
+    app(DiagnosticsReporter::class)->reportThrowable(DiagnosticsReporter::CRASH, new RuntimeException);
+
+    expect(DeviceReport::query()->sole()->message)->toBe(RuntimeException::class);
+});
+
+/**
+ * Laporan menunggu sinyal, dan sementara menunggu, aplikasinya bisa keburu
+ * diperbarui. Kalau keadaannya baru direkam saat kirim, laporan itu akan
+ * menyalahkan versi yang tidak pernah mengalaminya.
+ */
+it('remembers the version the crash happened on, not the one installed later', function () {
+    pretendPhone();
+    Http::fake(['*/api/v1/device-reports' => Http::response(['received' => 1])]);
+
+    config(['nativephp.version' => '1.0.0']);
+    app(DiagnosticsReporter::class)->report(DiagnosticsReporter::CRASH, 'Sesuatu meledak');
+
+    config(['nativephp.version' => '1.1.0']);
+    app(DiagnosticsReporter::class)->flush();
+
+    Http::assertSent(fn ($request): bool => $request['reports'][0]['context']['app_version'] === '1.0.0');
+});
+
+it('still describes a report that was queued before contexts were kept', function () {
+    pretendPhone();
+    Http::fake(['*/api/v1/device-reports' => Http::response(['received' => 1])]);
+
+    app(DiagnosticsReporter::class)->report(DiagnosticsReporter::CRASH, 'Sesuatu meledak');
+    DeviceReport::query()->update(['context' => null]);
+
+    app(DiagnosticsReporter::class)->flush();
+
+    Http::assertSent(fn ($request): bool => $request['reports'][0]['context']['device'] === 'Samsung SM-A536E');
 });

@@ -59,12 +59,41 @@ class DeviceReportReceived extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject('Aplikasi ponsel bermasalah di perangkat pengguna')
             ->greeting("Halo {$notifiable->name},")
             ->line($this->summary())
-            ->line($this->report->message)
-            ->action('Lihat laporan', $this->reviewUrl());
+            ->line($this->report->message);
+
+        if (($device = $this->deviceLine()) !== null) {
+            $mail->line($device);
+        }
+
+        return $mail->action('Lihat laporan', $this->reviewUrl());
+    }
+
+    /**
+     * Perangkat, versinya, dan alamat asalnya dalam satu baris.
+     *
+     * Kerusakan jarang mengenai semua orang sekaligus — biasanya satu merek atau
+     * satu versi. Menaruhnya di email berarti polanya terbaca dari kotak masuk,
+     * tanpa perlu membuka panel satu per satu.
+     *
+     * Laporan dari aplikasi versi lama membawa keterangan jauh lebih sedikit, jadi
+     * barisnya dibangun dari apa pun yang ada dan dilewati kalau tidak ada apa-apa.
+     */
+    private function deviceLine(): ?string
+    {
+        $context = $this->report->context ?? [];
+
+        $parts = array_filter([
+            $context['device'] ?? null,
+            $context['os'] ?? $context['platform'] ?? null,
+            isset($context['app_version']) ? 'aplikasi '.$context['app_version'] : null,
+            $this->report->ip_address,
+        ]);
+
+        return $parts === [] ? null : implode(' · ', $parts);
     }
 
     private function summary(): string

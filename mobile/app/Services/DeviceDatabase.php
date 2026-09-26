@@ -127,7 +127,7 @@ class DeviceDatabase
             // Ponsel yang penyimpanannya penuh tidak bisa mencatat apa pun; laporannya masih dicoba.
         }
 
-        $this->reporter->report(DiagnosticsReporter::MIGRATION_FAILURE, $message);
+        $this->reporter->reportThrowable(DiagnosticsReporter::MIGRATION_FAILURE, $exception);
     }
 
     private function forgetFailure(): void

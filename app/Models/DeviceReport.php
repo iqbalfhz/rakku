@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['kind', 'message', 'context', 'occurred_at'])]
+#[Fillable(['kind', 'message', 'detail', 'context', 'ip_address', 'occurred_at'])]
 class DeviceReport extends Model
 {
     /**
