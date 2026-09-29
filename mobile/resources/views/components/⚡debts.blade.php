@@ -72,10 +72,8 @@ new class extends Component
 ?>
 
 <div>
-    <header class="masthead">
-        <p class="masthead__brand">Utang-piutang</p>
-        <h1 class="masthead__title">Siapa nunggak,<br>siapa ditagih.</h1>
-        <p class="masthead__note">Tercatat di ponsel, ikut tersinkron saat ada sinyal.</p>
+    <header class="masthead masthead--compact">
+        <h1 class="masthead__title">Siapa nunggak, siapa ditagih.</h1>
     </header>
 
     @if (! $this->isPremium())

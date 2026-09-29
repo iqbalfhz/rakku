@@ -195,10 +195,8 @@ new class extends Component
 ?>
 
 <div>
-    <header class="masthead">
-        <p class="masthead__brand">{{ $this->isEditing() ? 'Ubah catatan' : 'Catatan baru' }}</p>
-        <h1 class="masthead__title">{{ $this->isEditing() ? 'Perbaiki' : 'Tulis' }}<br>transaksi.</h1>
-        <p class="masthead__note">Tersimpan di ponsel walau sedang tanpa sinyal.</p>
+    <header class="masthead masthead--compact">
+        <h1 class="masthead__title">{{ $this->isEditing() ? 'Perbaiki' : 'Tulis' }} transaksi.</h1>
     </header>
 
     <form wire:submit="save">

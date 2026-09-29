@@ -603,3 +603,19 @@ a.button { text-decoration: none; }
 .peek:active { color: var(--ink); }
 
 .numeral--hidden { color: var(--ink-soft); letter-spacing: .05em; }
+
+/* Masthead padat untuk empat layar tab.
+   Layar yang didatangi lewat tab dibuka puluhan kali sehari, dan judul serif dua
+   baris di sana menghabiskan seperlima tinggi layar hanya untuk memberi tahu
+   nama layar yang barusan ditekan sendiri. Layar yang didatangi sengaja — Laporan,
+   Anggaran, Invoice — tetap memakai judul penuh, karena ke sanalah karakternya
+   masih terbayar. */
+.masthead--compact { margin-bottom: 18px; }
+
+.masthead--compact .masthead__title {
+    font-size: 26px;
+    line-height: 1.15;
+    margin: 6px 0 0;
+}
+
+.masthead--compact .masthead__note { margin-top: 4px; font-size: 14px; }

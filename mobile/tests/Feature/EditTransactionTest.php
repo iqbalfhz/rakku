@@ -89,3 +89,14 @@ it('refuses to open an entry that was already deleted', function () {
 
     Livewire::test('record', ['publicId' => '01m3trx'])->assertStatus(404);
 });
+
+/**
+ * Label kecil di atas judul dibuang saat masthead dipadatkan, jadi judul itu
+ * sendiri kini satu-satunya yang membedakan menulis baru dari memperbaiki yang
+ * sudah ada — dan salah membedakannya berarti menimpa catatan tanpa sadar.
+ */
+it('says whether the form writes a new note or fixes an old one', function () {
+    Livewire::test('record')->assertSee('Tulis transaksi.');
+
+    Livewire::test('record', ['publicId' => '01m3trx'])->assertSee('Perbaiki transaksi.');
+});

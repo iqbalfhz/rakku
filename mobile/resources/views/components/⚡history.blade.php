@@ -161,9 +161,8 @@ new class extends Component
 ?>
 
 <div>
-    <header class="masthead">
-        <p class="masthead__brand">Riwayat</p>
-        <h1 class="masthead__title">Semua<br>catatan.</h1>
+    <header class="masthead masthead--compact">
+        <h1 class="masthead__title">Semua catatan.</h1>
         @if ($this->hasActiveFilters())
             <p class="masthead__note">{{ $this->matchCount() }} catatan cocok · {{ $this->matchTotal() }}</p>
         @endif

@@ -207,7 +207,7 @@ new class extends Component
      x-on:bridge-ready.window="$wire.autoSync()"
      x-on:visibilitychange.document="if (! document.hidden) { $wire.autoSync() }"
      x-on:online.window="$wire.autoSync()">
-    <header class="masthead">
+    <header class="masthead masthead--compact">
         <p class="masthead__brand"><a href="{{ route('books') }}" wire:navigate style="color: inherit;">{{ $bookName }} · ganti</a></p>
         <h1 class="masthead__title">Halo, {{ $userName }}</h1>
         <p class="masthead__note">Sinkron terakhir: {{ $this->syncLabel() }}</p>

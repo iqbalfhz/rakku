@@ -80,3 +80,15 @@ it('offers the button back after a sync that failed', function () {
 
     Livewire::test('home')->assertSee('Sinkronkan sekarang');
 });
+
+/**
+ * Masthead keempat layar tab dipadatkan, dan yang dibuang hanyalah hiasan.
+ * Yang membawa keterangan tetap tinggal — di beranda, itu penukar buku dan
+ * kabar kapan terakhir tersinkron.
+ */
+it('keeps the book switcher and the sync status in the shortened masthead', function () {
+    Livewire::test('home')
+        ->assertSeeHtml('href="'.route('books').'"')
+        ->assertSee('Warung Kopi')
+        ->assertSee('Sinkron terakhir');
+});

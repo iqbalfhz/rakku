@@ -152,3 +152,16 @@ it('clears every filter at once', function () {
         ->assertSet('month', '')
         ->assertSee('Beli kertas');
 });
+
+/**
+ * Label "Riwayat" di atas judul dibuang karena hanya mengulang nama tab yang
+ * barusan ditekan. Jumlah hasil saringan bukan hiasan, jadi ia tetap.
+ */
+it('still reports how many notes a filter matched', function () {
+    note(['description' => 'Beli kertas']);
+    note(['description' => 'Bayar listrik']);
+
+    Livewire::test('history')
+        ->set('search', 'kertas')
+        ->assertSee('1 catatan cocok');
+});
