@@ -543,3 +543,63 @@ a.button { text-decoration: none; }
 
 .gauge__fill--income { background: var(--chart-income); }
 .gauge__fill--expense { background: var(--chart-expense); }
+
+/* Alpine baru menghapus penanda ini setelah menyala. Dipakai supaya saldo tidak
+   sempat berkedip terlihat sebelum pilihan "sembunyikan" sempat dibaca. */
+[x-cloak] { display: none !important; }
+
+/* Petak pintasan: tujuh tujuan dalam dua baris, menggantikan tujuh baris daftar
+   yang dulu mendorong catatan terakhir jauh ke bawah lipatan. */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-top: 6px;
+}
+
+.grid__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    padding: 14px 2px;
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    text-align: center;
+}
+
+.grid__item:active { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+
+.grid__icon { color: var(--accent); }
+
+/* Dua baris disediakan untuk semua label supaya ikon tiap petak tetap sejajar,
+   walau hanya sebagian namanya yang perlu dua baris. */
+.grid__label {
+    min-height: 2.5em;
+    font-size: 12px;
+    line-height: 1.25;
+    color: var(--ink-soft);
+}
+
+/* Label pita yang membawa tombol kecil di ujung kanannya. */
+.tape__label--with-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.peek {
+    display: inline-flex;
+    padding: 4px;
+    margin: -4px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+}
+
+.peek:active { color: var(--ink); }
+
+.numeral--hidden { color: var(--ink-soft); letter-spacing: .05em; }
