@@ -412,12 +412,21 @@ return [
     |--------------------------------------------------------------------------
     */
     'hot_reload' => [
+        /*
+         * `database` dan `bootstrap` sempat hilang dari daftar ini, dan akibatnya
+         * tidak kelihatan: kode baru ikut tersalin ke ponsel sementara migrasi yang
+         * dibutuhkannya tidak, jadi aplikasi berjalan di atas tabel yang kolomnya
+         * belum ada. Penulisan yang gagal ditelan diam-diam oleh pelapor kerusakan,
+         * dan barulah ketahuan saat laporan yang ditunggu tidak pernah datang.
+         */
         'watch_paths' => [
             'app',
+            'bootstrap',
+            'config',
+            'database',
+            'public',
             'resources',
             'routes',
-            'config',
-            'public',
         ],
 
         'exclude_patterns' => [
@@ -427,6 +436,9 @@ return [
             'nativephp',
             'credentials',
             'node_modules',
+            // Berisi jalur absolut mesin pembangun; menyalinnya ke ponsel merusaknya.
+            'bootstrap/cache',
+            'bootstrap\cache',
             '\.swp',
             '\.tmp',
             '~',
