@@ -624,3 +624,27 @@ a.button { text-decoration: none; }
 }
 
 .masthead--compact .masthead__note { margin-top: 4px; font-size: 14px; }
+
+/* Baris catatan yang seluruh bidangnya bisa diketuk untuk membuka.
+   Sebelumnya tiap baris membawa tautan "Ubah" setebal beberapa piksel di sebelah
+   nominalnya — sasaran sentuh kecil, dan satu elemen lagi yang harus dibaca mata
+   di setiap baris. Tautannya kini dibentangkan menutupi seluruh baris, jadi
+   sasarannya sebesar barisnya sendiri dan yang tersisa untuk dibaca hanya isinya. */
+.entry--tappable { position: relative; }
+
+.entry__hit {
+    position: absolute;
+    inset: -2px -8px;
+    border-radius: 10px;
+}
+
+.entry__hit:active { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+
+/* Tetap di atas bidang ketuk supaya menghapus tidak berubah jadi membuka. */
+.entry__trailing {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-shrink: 0;
+}

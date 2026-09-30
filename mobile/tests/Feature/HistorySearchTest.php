@@ -165,3 +165,28 @@ it('still reports how many notes a filter matched', function () {
         ->set('search', 'kertas')
         ->assertSee('1 catatan cocok');
 });
+
+/**
+ * Tautan "Ubah" di tiap baris diganti bidang ketuk seluas barisnya. Sasaran
+ * sentuhnya jadi jauh lebih besar, dan yang tersisa untuk dibaca mata di setiap
+ * baris hanya isinya.
+ */
+it('opens a note by tapping anywhere on its row', function () {
+    $note = note(['description' => 'Beli kertas', 'public_id' => 'trx-buka']);
+
+    Livewire::test('history')
+        ->assertSeeHtml('class="entry__hit" href="'.route('record', 'trx-buka').'"')
+        ->assertDontSeeHtml('>Ubah</a>');
+});
+
+/**
+ * Menghapus tidak boleh berubah jadi membuka: tombolnya harus tetap di atas
+ * bidang ketuk, bukan tertimbun olehnya.
+ */
+it('keeps the delete button reachable above the row hit area', function () {
+    note(['description' => 'Beli kertas']);
+
+    Livewire::test('history')
+        ->assertSeeHtml('class="entry__trailing"')
+        ->assertSeeHtml('wire:confirm="Hapus catatan ini?"');
+});

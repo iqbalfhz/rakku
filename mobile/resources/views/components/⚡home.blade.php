@@ -298,7 +298,10 @@ new class extends Component
         <p class="tape__label">Catatan terakhir</p>
 
         @forelse ($this->recentTransactions() as $transaction)
-            <div class="entry">
+            <div class="entry entry--tappable">
+                <a class="entry__hit" href="{{ route('record', $transaction->public_id) }}" wire:navigate
+                   aria-label="Ubah {{ $transaction->description ?: 'catatan tanpa keterangan' }}"></a>
+
                 <div class="entry__label">
                     <p class="entry__title">{{ $transaction->description ?: 'Tanpa keterangan' }}</p>
                     <p class="entry__meta">
@@ -308,7 +311,7 @@ new class extends Component
                     </p>
                 </div>
 
-                <div style="display: flex; align-items: baseline; gap: 12px; flex-shrink: 0;">
+                <div class="entry__trailing">
                     <span class="entry__amount {{ $transaction->isIncome() ? 'numeral--credit' : 'numeral--debit' }}">
                         {{ $transaction->isIncome() ? '+' : '−' }}{{ Rupiah::format((float) $transaction->amount) }}
                     </span>
