@@ -132,7 +132,7 @@ Kembalikan ketiganya ke nilai pengembangan setelah selesai merilis. Pengingatnya
 Keystore dan kata sandinya diberikan lewat baris perintah, bukan lewat `.env`:
 
 ```
-php artisan native:build --release ^
+php artisan native:package android --build-type=bundle ^
   --keystore=C:/lokasi/aman/app-release-key.jks ^
   --keystore-password=KATA_SANDI_KEYSTORE ^
   --key-alias=app-key ^
@@ -141,7 +141,14 @@ php artisan native:build --release ^
 
 (`^` adalah penyambung baris di Command Prompt Windows. Di PowerShell pakai backtick, atau tulis semuanya dalam satu baris.)
 
-Hasilnya berkas `.aab` (Android App Bundle) yang sudah ditandatangani. Itu yang diunggah ke Play Console.
+Dua hal yang mudah salah:
+
+- Perintahnya **`native:package`**, bukan `native:build`. Yang terakhir itu khusus iOS dan menolak jalan di luar macOS.
+- **`--build-type=bundle`** wajib. Tanpanya nilai bawaannya `release`, yang menghasilkan APK — sedangkan Play Store meminta AAB.
+
+Hasilnya `nativephp/android/app/build/outputs/bundle/release/app-release.aab`, sudah ditandatangani. Itu yang diunggah ke Play Console.
+
+Perintah ini **tidak butuh ponsel atau emulator tersambung** — ia hanya memanggil Gradle.
 
 **Catatan riwayat perintah:** kata sandi yang diketik di terminal tersimpan di riwayat shell. Kalau itu mengganggu, jalankan perintahnya dari skrip kecil yang tidak ikut Git, atau kembalikan variabel `.env` hanya selama build lalu hapus lagi.
 
