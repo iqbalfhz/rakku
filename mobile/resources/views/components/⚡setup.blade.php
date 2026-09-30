@@ -178,10 +178,8 @@ new class extends Component
 ?>
 
 <div>
-    <header class="masthead">
-        <p class="masthead__brand">Pengaturan buku</p>
-        <h1 class="masthead__title">Akun dan<br>kategori.</h1>
-        <p class="masthead__note">Rangka buku kas: tempat uang disimpan dan cara mengelompokkannya.</p>
+    <header class="masthead masthead--compact">
+        <h1 class="masthead__title">Akun dan kategori.</h1>
     </header>
 
     @if ($error)

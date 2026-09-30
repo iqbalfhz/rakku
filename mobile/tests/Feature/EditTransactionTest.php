@@ -100,3 +100,14 @@ it('says whether the form writes a new note or fixes an old one', function () {
 
     Livewire::test('record', ['publicId' => '01m3trx'])->assertSee('Perbaiki transaksi.');
 });
+
+/**
+ * Menulis baru selalu berawal dari angkanya, jadi kursornya ditaruh di sana.
+ * Memperbaiki catatan lama tidak: yang ingin diubah belum tentu nominalnya, dan
+ * papan ketik yang muncul sendiri justru menutupi bagian yang sedang dibaca.
+ */
+it('puts the cursor on the amount for a new note but not when fixing an old one', function () {
+    Livewire::test('record')->assertSeeHtml('x-init="$el.focus()"');
+
+    Livewire::test('record', ['publicId' => '01m3trx'])->assertDontSeeHtml('x-init="$el.focus()"');
+});

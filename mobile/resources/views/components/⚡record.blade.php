@@ -214,8 +214,17 @@ new class extends Component
 
         <div class="field">
             <label class="field__label" for="amount">Nominal</label>
+            {{--
+                Layar ini ada untuk satu hal: memasukkan angka. Kursornya ditaruh di
+                sini begitu layar terbuka supaya tidak perlu diketuk dulu.
+
+                Hanya saat menulis baru — kalau sedang memperbaiki catatan lama, memaksa
+                kursor ke nominal justru menutupi bagian yang sedang dibaca, dan yang
+                ingin diubah belum tentu angkanya.
+            --}}
             <input class="field__input field__input--numeral" id="amount" type="number" inputmode="numeric"
-                   min="1" step="1" placeholder="0" wire:model="amount">
+                   min="1" step="1" placeholder="0" wire:model="amount"
+                   @unless ($this->isEditing()) x-init="$el.focus()" @endunless>
             @error('amount') <p class="field__hint">{{ $message }}</p> @enderror
         </div>
 

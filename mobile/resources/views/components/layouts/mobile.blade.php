@@ -31,20 +31,45 @@
         {{ $slot }}
     </main>
 
-    {{-- Tab kartu indeks: muncul setelah ada buku yang dibuka, karena semua layarnya butuh itu. --}}
+    {{--
+        Tab kartu indeks: muncul setelah ada buku yang dibuka, karena semua
+        layarnya butuh itu. Ikonnya digambar dengan gaya garis yang sama seperti
+        petak pintasan di beranda, dan mewarisi warna dari tabnya sendiri supaya
+        yang sedang aktif ikut menonjol tanpa aturan tambahan.
+    --}}
     @if ($hasOpenBook)
+        @php
+            $tabs = [
+                ['route' => 'home', 'active' => 'home', 'label' => 'Beranda', 'accent' => false, 'paths' => [
+                    'm3 10.5 9-7.5 9 7.5', 'M5.5 9.5V21h13V9.5',
+                ]],
+                ['route' => 'record', 'active' => 'record', 'label' => 'Catat', 'accent' => true, 'paths' => [
+                    'M12 5v14', 'M5 12h14',
+                ]],
+                ['route' => 'history', 'active' => 'history', 'label' => 'Riwayat', 'accent' => false, 'paths' => [
+                    'M12 3a9 9 0 1 1-9 9', 'M3 3v5h5', 'M12 7v5l3 2',
+                ]],
+                ['route' => 'debts', 'active' => 'debt*', 'label' => 'Utang', 'accent' => false, 'paths' => [
+                    'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7', 'M2 20a7 7 0 0 1 14 0',
+                    'M17 10.5a3 3 0 1 0 0-6', 'M17.5 13.5a5.5 5.5 0 0 1 4.5 5.4',
+                ]],
+            ];
+        @endphp
+
         <nav class="tabs">
-            <a class="tabs__tab {{ request()->routeIs('home') ? 'tabs__tab--on' : '' }}"
-               href="{{ route('home') }}" wire:navigate>Beranda</a>
-
-            <a class="tabs__tab tabs__tab--accent {{ request()->routeIs('record') ? 'tabs__tab--on' : '' }}"
-               href="{{ route('record') }}" wire:navigate>Catat</a>
-
-            <a class="tabs__tab {{ request()->routeIs('history') ? 'tabs__tab--on' : '' }}"
-               href="{{ route('history') }}" wire:navigate>Riwayat</a>
-
-            <a class="tabs__tab {{ request()->routeIs('debt*') ? 'tabs__tab--on' : '' }}"
-               href="{{ route('debts') }}" wire:navigate>Utang</a>
+            @foreach ($tabs as $tab)
+                <a class="tabs__tab {{ $tab['accent'] ? 'tabs__tab--accent' : '' }} {{ request()->routeIs($tab['active']) ? 'tabs__tab--on' : '' }}"
+                   href="{{ route($tab['route']) }}" wire:navigate>
+                    <svg class="tabs__icon" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        @foreach ($tab['paths'] as $d)
+                            <path d="{{ $d }}"></path>
+                        @endforeach
+                    </svg>
+                    {{ $tab['label'] }}
+                </a>
+            @endforeach
         </nav>
     @endif
 

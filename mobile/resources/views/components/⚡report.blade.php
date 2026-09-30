@@ -130,10 +130,8 @@ new class extends Component
 ?>
 
 <div>
-    <header class="masthead">
-        <p class="masthead__brand">Laporan</p>
-        <h1 class="masthead__title">Sebulan dalam<br>satu halaman.</h1>
-        <p class="masthead__note">Dihitung dari catatan yang ada di ponsel, tanpa perlu sinyal.</p>
+    <header class="masthead masthead--compact">
+        <h1 class="masthead__title">Sebulan dalam satu halaman.</h1>
     </header>
 
     <div class="field">
