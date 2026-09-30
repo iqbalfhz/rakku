@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\ApiClient;
+use App\Services\DeviceFacts;
 use App\Services\SyncEngine;
 use App\Services\TokenStore;
 use Livewire\Component;
@@ -26,7 +27,7 @@ new class extends Component
         $this->error = null;
 
         try {
-            $session = $apiClient->login($this->email, $this->password, $this->deviceName());
+            $session = $apiClient->login($this->email, $this->password, $this->deviceName(app(DeviceFacts::class)));
         } catch (\RuntimeException $exception) {
             $this->error = $exception->getMessage();
 
@@ -65,9 +66,22 @@ new class extends Component
         }
     }
 
-    private function deviceName(): string
+    /**
+     * Nama yang dipakai server untuk menandai token perangkat ini.
+     *
+     * Dulu nilainya dipatok mati, jadi setiap ponsel yang pernah masuk muncul
+     * dengan nama yang sama persis di daftar "perangkat yang masih punya akses".
+     * Daftarnya jadi tidak bisa dipakai untuk tujuannya sendiri: tombol Cabut
+     * berubah jadi tebakan, dan salah tebak berarti mengeluarkan ponsel yang
+     * sedang dipegang.
+     *
+     * Kalau jembatannya tidak bisa menjawab — runtime tanpa NativePHP, atau
+     * perangkat yang menolak memberi tahu — nama lamanya tetap dipakai daripada
+     * mengirim baris kosong.
+     */
+    private function deviceName(DeviceFacts $deviceFacts): string
     {
-        return 'Ponsel RakKu';
+        return $deviceFacts->name() ?? 'Ponsel RakKu';
     }
 };
 

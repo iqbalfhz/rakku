@@ -6,6 +6,7 @@ use App\Models\Transaction;
 use App\Services\TokenStore;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
+use Native\Mobile\Testing\FakeBridge;
 
 /**
  * Jawaban server yang normal saat login berhasil.
@@ -198,4 +199,38 @@ it('keeps the tab bar off the login screen', function () {
     $this->get('/')
         ->assertSuccessful()
         ->assertDontSee('tabs__tab', escape: false);
+});
+
+/**
+ * Nama ini yang muncul di daftar "perangkat yang masih punya akses", dan di
+ * sebelahnya ada tombol Cabut. Kalau semua perangkat bernama sama, mencabut
+ * salah satunya berarti menebak — dan salah tebak mengeluarkan ponsel yang
+ * sedang dipegang.
+ */
+it('tells the server which phone is signing in', function () {
+    FakeBridge::current()?->respondTo('Device.GetInfo', ['info' => json_encode([
+        'manufacturer' => 'samsung',
+        'model' => 'SM-A536E',
+    ])]);
+    fakeLoginResponse();
+
+    Livewire::test('login')
+        ->set('email', 'budi@rakku.test')
+        ->set('password', 'rahasia123')
+        ->call('submit');
+
+    Http::assertSent(fn ($request): bool => str_contains($request->url(), '/login')
+        && $request['device_name'] === 'Samsung SM-A536E');
+});
+
+it('falls back to a generic name when the phone will not say what it is', function () {
+    fakeLoginResponse();
+
+    Livewire::test('login')
+        ->set('email', 'budi@rakku.test')
+        ->set('password', 'rahasia123')
+        ->call('submit');
+
+    Http::assertSent(fn ($request): bool => str_contains($request->url(), '/login')
+        && $request['device_name'] === 'Ponsel RakKu');
 });

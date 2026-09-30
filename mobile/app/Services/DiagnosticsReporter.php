@@ -4,8 +4,6 @@ namespace App\Services;
 
 use App\Models\DeviceReport;
 use Illuminate\Support\Collection;
-use Native\Mobile\Facades\Device;
-use Native\Mobile\Facades\System;
 use Throwable;
 
 /**
@@ -43,15 +41,11 @@ class DiagnosticsReporter
      */
     public const int DETAIL_LIMIT = 8000;
 
-    /**
-     * Satu panggilan jembatan per permintaan sudah cukup: isinya tidak berubah
-     * di tengah jalan, dan tiap panggilan menyeberang ke sisi Kotlin.
-     *
-     * @var array<string, mixed>|null
-     */
-    private ?array $deviceInfo = null;
-
-    public function __construct(private ApiClient $apiClient, private TokenStore $tokenStore) {}
+    public function __construct(
+        private ApiClient $apiClient,
+        private TokenStore $tokenStore,
+        private DeviceFacts $deviceFacts,
+    ) {}
 
     public function report(string $kind, string $message, ?string $detail = null): void
     {
@@ -161,96 +155,24 @@ class DiagnosticsReporter
      * versi Android, atau satu versi aplikasi. Tanpa keterangan ini, pola seperti
      * itu tidak pernah terlihat dan setiap laporan berdiri sendiri tanpa petunjuk.
      *
-     * Tidak ada alamat MAC di sini, dan itu disengaja. Sejak Android 6 semua
-     * aplikasi hanya menerima 02:00:00:00:00:00, dan Google menggolongkannya
-     * sebagai pengenal permanen yang tidak bisa direset — memintanya adalah alasan
-     * penolakan di Play Store. Penggantinya `device_id`: pengenal per-aplikasi yang
-     * ikut terhapus saat ponsel direset pabrik, yang justru itulah yang dibutuhkan
-     * untuk membedakan perangkat.
-     *
      * @return array<string, mixed>
      */
     private function context(): array
     {
-        $info = $this->deviceInfo();
-
         return array_filter([
-            'platform' => $this->platform(),
-            'device' => $this->deviceName($info),
-            'os' => $this->operatingSystem($info),
-            'sdk' => isset($info['androidSDKVersion']) ? (string) $info['androidSDKVersion'] : null,
-            'device_id' => $this->deviceId(),
-            'is_virtual' => $info['isVirtual'] ?? null,
-            'webview' => $info['webViewVersion'] ?? null,
-            'language' => $info['language'] ?? null,
+            'platform' => $this->deviceFacts->platform(),
+            'device' => $this->deviceFacts->name(),
+            'os' => $this->deviceFacts->operatingSystem(),
+            'sdk' => $this->deviceFacts->sdkVersion(),
+            'device_id' => $this->deviceFacts->id(),
+            'is_virtual' => $this->deviceFacts->isVirtual(),
+            'webview' => $this->deviceFacts->webViewVersion(),
+            'language' => $this->deviceFacts->language(),
             // Versi yang dipasang NativePHP ke APK, bukan config bawaan Laravel yang
             // tidak pernah diisi — tanpa ini setiap laporan mengaku "dev".
             'app_version' => (string) config('nativephp.version', 'dev'),
             'php_version' => PHP_VERSION,
         ], fn (mixed $value): bool => $value !== null && $value !== '');
-    }
-
-    private function platform(): string
-    {
-        try {
-            return System::isAndroid() ? 'Android' : (System::isIos() ? 'iOS' : 'Lainnya');
-        } catch (Throwable) {
-            return 'Lainnya';
-        }
-    }
-
-    /**
-     * @param  array<string, mixed>  $info
-     */
-    private function deviceName(array $info): ?string
-    {
-        // Build.MANUFACTURER datang huruf kecil semua, mis. "samsung SM-A536E".
-        $parts = array_filter([
-            isset($info['manufacturer']) ? ucfirst((string) $info['manufacturer']) : null,
-            $info['model'] ?? null,
-        ]);
-
-        return $parts === [] ? null : implode(' ', $parts);
-    }
-
-    /**
-     * @param  array<string, mixed>  $info
-     */
-    private function operatingSystem(array $info): ?string
-    {
-        $name = trim(($info['operatingSystem'] ?? '').' '.($info['osVersion'] ?? ''));
-
-        return $name === '' ? null : $name;
-    }
-
-    private function deviceId(): ?string
-    {
-        try {
-            $id = Device::getId();
-        } catch (Throwable) {
-            return null;
-        }
-
-        // Jembatannya menjawab "unknown" saat pengenalnya tidak terbaca.
-        return $id === null || $id === 'unknown' ? null : $id;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function deviceInfo(): array
-    {
-        if ($this->deviceInfo !== null) {
-            return $this->deviceInfo;
-        }
-
-        try {
-            $decoded = json_decode((string) Device::getInfo(), associative: true);
-        } catch (Throwable) {
-            $decoded = null;
-        }
-
-        return $this->deviceInfo = is_array($decoded) ? $decoded : [];
     }
 
     private function fingerprintOf(string $kind, string $message): string
